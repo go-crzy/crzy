@@ -139,6 +139,7 @@ func Rollout(u Upstreamer, newprogram, oldprogram string) error {
 	return nil
 }
 
+// NewReverseProxy creates a reverse proxy for the existing service
 func NewReverseProxy(u Upstreamer) http.HandlerFunc {
 	transport := &http.Transport{
 		TLSHandshakeTimeout: 10 * time.Second,
