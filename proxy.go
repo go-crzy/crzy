@@ -28,7 +28,7 @@ func NewUpstreamAPI(u Upstreamer) http.Handler {
 		}
 		switch command {
 		case "start":
-			_, _, err := u.Lookup(program, "v1")
+			_, _, err := u.Lookup(program + "/v1")
 			if err == nil {
 				log.Printf("%s/v1 already started, set default", program)
 				u.SetDefault(program, "v1")
@@ -54,14 +54,14 @@ func NewUpstreamAPI(u Upstreamer) http.Handler {
 			w.Write([]byte(`{"message": "OK"}`))
 			return
 		case "stop":
-			_, cmd, err := u.Lookup(program, "v1")
+			_, cmd, err := u.Lookup(program + "/v1")
 			if err != nil {
 				w.WriteHeader(http.StatusNotFound)
 				w.Write([]byte(`{"message": "NotFound"}`))
 				return
 			}
-			cmd.Process.Kill()
 			log.Printf("stopping %s/v1", program)
+			cmd.Process.Kill()
 			u.Unregister(program, "v1")
 			w.WriteHeader(http.StatusNoContent)
 			w.Write([]byte(`{"message": "Stopped"}`))
@@ -114,7 +114,7 @@ func NewUpstreamAPI(u Upstreamer) http.Handler {
 
 // Rollout start newprogram and stop oldprogram
 func Rollout(u Upstreamer, newprogram, oldprogram string) error {
-	_, _, err := u.Lookup(newprogram, "v1")
+	_, _, err := u.Lookup(newprogram + "/v1")
 	if err == nil {
 		return ErrServiceRunning
 	}
@@ -130,10 +130,11 @@ func Rollout(u Upstreamer, newprogram, oldprogram string) error {
 	log.Printf("starting %s/v1 with port %s", newprogram, port)
 	u.Register(newprogram, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
 	cmd.Start()
-	_, cmd, err = u.Lookup(oldprogram, "v1")
+	_, cmd, err = u.Lookup(oldprogram + "/v1")
 	if err == nil {
-		cmd.Process.Kill()
+		log.Printf("stopping %s/v1", oldprogram)
 		u.Unregister(oldprogram, "v1")
+		cmd.Process.Kill()
 	}
 	return nil
 }
@@ -143,10 +144,10 @@ func NewReverseProxy(u Upstreamer) http.HandlerFunc {
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		version := r.Header.Get("version")
-		v, _, err := u.Lookup("red", version)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		service := r.Header.Get("service")
+		v, _, err := u.Lookup(service)
+		if err == ErrServiceNotFound {
+			http.Error(w, `{"message": "NotFound"}`, http.StatusNotFound)
 			return
 		}
 		(&httputil.ReverseProxy{

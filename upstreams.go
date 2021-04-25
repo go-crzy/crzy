@@ -30,7 +30,7 @@ type Upstreamer interface {
 	SetDefault(string, string) error
 	GetDefault() (string, error)
 	Unregister(string, string)
-	Lookup(string, string) (string, *exec.Cmd, error)
+	Lookup(string) (string, *exec.Cmd, error)
 	NextPort() (string, error)
 }
 
@@ -100,17 +100,16 @@ func (u *DefaultUpstreams) Unregister(name, version string) {
 }
 
 // Lookup returns the port for the version to find
-func (u *DefaultUpstreams) Lookup(name, version string) (string, *exec.Cmd, error) {
+func (u *DefaultUpstreams) Lookup(service string) (string, *exec.Cmd, error) {
 	u.RLock()
 	defer u.RUnlock()
-	if version == "" || version == "main" {
+	if service == "" || service == "main" {
 		if u.Default == nil {
 			return "", nil, ErrServiceNotFound
 		}
-		version = *u.Default
+		service = *u.Default
 	}
-	key := fmt.Sprintf("%s/%s", name, version)
-	process, ok := u.Versions[key]
+	process, ok := u.Versions[service]
 	if !ok {
 		return "", nil, ErrServiceNotFound
 	}
