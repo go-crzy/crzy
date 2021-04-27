@@ -105,7 +105,6 @@ func NewUpstreamAPI(u Upstreamer) http.Handler {
 			return
 		default:
 			log.Printf("unknown command")
-
 		}
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(`{"message": "BadRequest"}`))
