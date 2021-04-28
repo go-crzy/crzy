@@ -22,9 +22,11 @@ func (m *StateMachine) Run(ctx context.Context) error {
 	for {
 		select {
 		case f := <-m.action:
+			log.Println("action captured, ready to run....")
 			f()
 		case <-ctx.Done():
 			log.Println("stopping state machine....")
+			close(m.action)
 			return ctx.Err()
 		}
 	}

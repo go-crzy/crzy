@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrInvalidService = errors.New("invalidservice")
-	ErrServiceRunning = errors.New("servicerunning")
+	ErrServiceRunning     = errors.New("servicerunning")
+	ErrInvalidServiceName = errors.New("invalidservicename")
 )
 
 func NewUpstreamAPI(u Upstreamer) http.Handler {
@@ -135,6 +135,39 @@ func Rollout(u Upstreamer, newprogram, oldprogram string) error {
 		u.Unregister(oldprogram, "v1")
 		cmd.Process.Kill()
 	}
+	return nil
+}
+
+// Rollup starts the new version of a program
+func Rollup(u Upstreamer, artifact, name string) error {
+	old, _ := u.GetDefault()
+	_, _, err := u.Lookup(name + "/v1")
+	if err == nil {
+		return ErrServiceRunning
+	}
+	port, err := u.NextPort()
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(artifact)
+	cmd.Env = []string{fmt.Sprintf("PORT=%s", port)}
+	log.Printf("starting %s/v1 with port %s", name, port)
+	u.Register(name, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
+	cmd.Start()
+	if old == "" {
+		return nil
+	}
+	_, cmd, err = u.Lookup(old)
+	if err != nil {
+		return nil
+	}
+	cmd.Process.Kill()
+	key := strings.Split(old, "/")
+	if len(key) != 2 {
+		return ErrInvalidServiceName
+	}
+	log.Printf("stopping %s/%s", key[0], key[1])
+	u.Unregister(key[0], key[1])
 	return nil
 }
 
