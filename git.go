@@ -51,16 +51,15 @@ type DefaultUpdater struct {
 	upstream     Upstreamer
 }
 
-func NewUpdater(workspace *string, upstream Upstreamer, action chan<- func()) (Updater, error) {
-	path := "/tmp/workspace"
-	if workspace != nil && *workspace != "" {
-		path = *workspace
+func NewUpdater(workspace string, upstream Upstreamer, action chan<- func()) (Updater, error) {
+	if workspace == "" {
+		return nil, errors.New("unknownworkspace")
 	}
-	if err := os.Mkdir(path, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(workspace, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
 		return nil, err
 	}
 	return &DefaultUpdater{
-		WorkspaceDir: path,
+		WorkspaceDir: workspace,
 		action:       action,
 		upstream:     upstream,
 	}, nil
@@ -102,7 +101,7 @@ func (git *DefaultUpdater) Update(repo string) (string, error) {
 		cmd.Dir = workrepo
 		err := cmd.Run()
 		if err != nil {
-			log.Printf("git pull [%s] failed; error: %v", workrepo, err)
+			log.Printf("git pull [%s] failed; error: %v", repo, err)
 			return
 		}
 		cmd = exec.Command("git", "log", "-1", "--format=%H", ".")
@@ -120,6 +119,7 @@ func (git *DefaultUpdater) Update(repo string) (string, error) {
 		}
 		sha := match[1][0:16]
 		artifact := fmt.Sprintf("%s/%s/%s-%s%s", git.WorkspaceDir, artifacts, repo, sha, extension)
+		exe := fmt.Sprintf("%s-%s%s", repo, sha, extension)
 		cmd = exec.Command("go", "test", "-v", "./...")
 		cmd.Dir = workrepo
 		out, err = cmd.Output()
@@ -138,9 +138,9 @@ func (git *DefaultUpdater) Update(repo string) (string, error) {
 			return
 		}
 		old, _ := git.upstream.GetDefault()
-		_, _, err = git.upstream.Lookup(artifact + "/v1")
+		_, _, err = git.upstream.Lookup(exe + "/v1")
 		if err == nil {
-			log.Printf("executable %s already running", artifact)
+			log.Printf("executable %s already running", exe)
 			return
 		}
 		port, err := git.upstream.NextPort()
@@ -150,8 +150,8 @@ func (git *DefaultUpdater) Update(repo string) (string, error) {
 		}
 		cmd = exec.Command(artifact)
 		cmd.Env = []string{fmt.Sprintf("PORT=%s", port)}
-		log.Printf("starting %s/v1 with port %s", artifact, port)
-		git.upstream.Register(artifact, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
+		log.Printf("starting %s/v1 with port %s", exe, port)
+		git.upstream.Register(exe, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
 		cmd.Start()
 		if old == "" {
 			return

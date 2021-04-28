@@ -7,7 +7,7 @@ import (
 
 func TestNewUpdater(t *testing.T) {
 	dir := "./test"
-	_, err := NewUpdater(&dir, &DefaultUpstreams{}, make(chan<- func()))
+	_, err := NewUpdater(dir, &DefaultUpstreams{}, make(chan<- func()))
 	if err != nil {
 		t.Errorf("updater failed, err: %v", err)
 	}
