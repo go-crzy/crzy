@@ -50,3 +50,7 @@ with it:
 need support for another programming language or protocol or simply cannot
 figure out how to make it work, do not hesitate to open an
 [issue](https://github.com/carnage-sh/crzy/issues).
+
+## Known issues
+
+`crzy` does not support Windows
