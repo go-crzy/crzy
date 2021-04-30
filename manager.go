@@ -2,6 +2,7 @@ package crzy
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -13,7 +14,8 @@ import (
 )
 
 var (
-	service = "color"
+	repository = "myrepo"
+	server     = false
 )
 
 func RefreshRepository(updater Updater, next http.Handler) http.Handler {
@@ -21,17 +23,29 @@ func RefreshRepository(updater Updater, next http.Handler) http.Handler {
 		path := r.URL.Path
 		method := r.Method
 		next.ServeHTTP(w, r)
-		if path == "/color/.git/git-receive-pack" && method == "POST" {
+		if path == fmt.Sprintf("/%s/.git/git-receive-pack", repository) && method == "POST" {
 			log.Printf("%s on %s continue", path, method)
-			_, err := updater.Update("color")
+			_, err := updater.Update(repository)
 			if err != nil {
-				log.Printf("error updating color, %v", err)
+				log.Printf("error updating %s, %v", repository, err)
 			}
 		}
 	})
 }
 
+func Usage() {
+	flag.StringVar(&repository, "repository", "myrepo", "GIT repository target name")
+	flag.BoolVar(&server, "server", false, "run as a server")
+	flag.Parse()
+	if !server {
+		fmt.Println("crzy start a GIT server to start/stop services")
+		flag.PrintDefaults()
+		os.Exit(1)
+	}
+}
+
 func Startup() {
+	Usage()
 	g := new(errgroup.Group)
 	Upstream := &DefaultUpstreams{
 		Versions: map[string]HTTPProcess{},
@@ -49,7 +63,7 @@ func Startup() {
 	ctx, cancel := context.WithCancel(context.Background())
 	admin := http.NewServeMux()
 	gitHandler := RefreshRepository(updater, NewGITServer(workspace))
-	admin.Handle(fmt.Sprintf("/%s/", service), gitHandler)
+	admin.Handle(fmt.Sprintf("/%s/", repository), gitHandler)
 	api := NewUpstreamAPI(Upstream)
 	admin.Handle("/", api)
 	proxy := NewReverseProxy(Upstream)
