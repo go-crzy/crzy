@@ -1,4 +1,4 @@
-package crzy
+package pkg
 
 import (
 	"context"
@@ -67,10 +67,10 @@ func Startup() {
 	api := NewUpstreamAPI(Upstream)
 	admin.Handle("/", api)
 	proxy := NewReverseProxy(Upstream)
-	g.Go(func() error { return NewSignalHandler().Run(ctx, cancel) })
-	g.Go(func() error { return NewHTTPListener().Run(ctx, ":8080", admin) })
-	g.Go(func() error { return NewHTTPListener().Run(ctx, ":8081", proxy) })
-	g.Go(func() error { return NewCronService().Run(ctx) })
+	g.Go(func() error { /* yellow */ return NewSignalHandler().Run(ctx, cancel) })
+	g.Go(func() error { /* red */ return NewHTTPListener().Run(ctx, ":8080", admin) })
+	g.Go(func() error { /* blue */ return NewHTTPListener().Run(ctx, ":8081", proxy) })
+	g.Go(func() error { /* green */ return NewCronService().Run(ctx) })
 	g.Go(func() error { return NewStoreService(workspace).Run(ctx) })
 	g.Go(func() error { return machine.Run(ctx) })
 	if err := g.Wait(); err != nil {
