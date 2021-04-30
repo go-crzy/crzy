@@ -51,7 +51,7 @@ func Startup() {
 		Versions: map[string]HTTPProcess{},
 	}
 	rand.Seed(time.Now().UTC().UnixNano())
-	workspace := os.TempDir() + fmt.Sprintf("crzy-%d", rand.Intn(99999999))
+	workspace := os.TempDir() + fmt.Sprintf("/crzy-%d", rand.Intn(99999999))
 	machine := NewStateMachine()
 	updater, err := NewUpdater(workspace, Upstream, machine.action)
 	if err != nil {
