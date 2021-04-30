@@ -1,4 +1,4 @@
-package crzy
+package pkg
 
 import (
 	"errors"

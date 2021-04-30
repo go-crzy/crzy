@@ -14,7 +14,7 @@ The best way to understand how it works is to use it. You can check
 install and run `crzy`:
 
 ```shell
-go get https://github.com/carnage-sh/crzy/cmd
+go get github.com/carnage-sh/crzy
 crzy -server
 ```
 
