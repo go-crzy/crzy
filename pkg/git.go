@@ -11,29 +11,83 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sosedoff/gitkit"
+	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
 )
 
-func NewGITServer(dir string) http.Handler {
-	// Configure git hooks
-	// hooks := &gitkit.HookScripts{
-	// 	PreReceive: `echo "Hello World!"`,
-	// }
+type GitServer struct {
+	gitRootPath string
+	gitBinPath  string
+	repoName    string
+	absRepoPath string
+	head        string
+	ghx         *githttpxfer.GitHTTPXfer
+}
 
-	// Configure git service
-	service := gitkit.New(gitkit.Config{
-		Dir:        dir,
-		AutoCreate: true,
-		AutoHooks:  true,
-		// Hooks:      hooks,
-	})
+func NewGitServer(repository, head string) (*GitServer, error) {
 
-	// Configure git server. Will create git repos path if it does not exist.
-	// If hooks are set, it will also update all repos with new version of hook scripts.
-	if err := service.Setup(); err != nil {
-		log.Fatal(err)
+	gitBinPath, err := exec.LookPath("git")
+	if err != nil {
+		log.Println("git not found...")
+		return nil, err
 	}
-	return service
+	gitRootPath, err := os.MkdirTemp("", "crzy")
+	if err != nil {
+		log.Println("unable to create temporary directory")
+		return nil, err
+	}
+	err = os.Chdir(gitRootPath)
+	if err != nil {
+		log.Printf("unable to chdir to %s, %v", gitRootPath, err)
+		return nil, err
+	}
+
+	ghx, err := githttpxfer.New(gitRootPath, gitBinPath)
+	if err != nil {
+		log.Printf("GitHTTPXfer instance could not be created. %v", err)
+		return nil, err
+	}
+
+	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {
+		log.Printf("prepare run service rpc upload.")
+	})
+	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {
+		log.Printf("prepare run service rpc receive.")
+	})
+	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {
+		log.Printf("after match routing.")
+	})
+	absRepoPath := ghx.Git.GetAbsolutePath(repository)
+
+	os.Mkdir(absRepoPath, os.ModeDir|os.ModePerm)
+	if _, err := execCmd(absRepoPath, "git", "init", "--bare", "--shared"); err != nil {
+		log.Printf("execute command error: %s", err.Error())
+		return nil, err
+	}
+
+	return &GitServer{
+		gitRootPath: gitRootPath,
+		gitBinPath:  gitBinPath,
+		repoName:    repository,
+		absRepoPath: absRepoPath,
+		head:        head,
+		ghx:         ghx,
+	}, nil
+}
+
+func (g *GitServer) cleanupRepository() {
+	os.RemoveAll(g.gitRootPath)
+}
+
+func (g *GitServer) Updater(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	})
+}
+
+func execCmd(dir string, name string, arg ...string) ([]byte, error) {
+	c := exec.Command(name, arg...)
+	c.Dir = dir
+	return c.CombinedOutput()
 }
 
 var (

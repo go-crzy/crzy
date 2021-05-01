@@ -15,6 +15,7 @@ import (
 
 var (
 	repository = "myrepo"
+	head       = "master"
 	server     = false
 )
 
@@ -35,6 +36,7 @@ func RefreshRepository(updater Updater, next http.Handler) http.Handler {
 
 func Usage() {
 	flag.StringVar(&repository, "repository", "myrepo", "GIT repository target name")
+	flag.StringVar(&head, "head", "main", "GIT repository target name")
 	flag.BoolVar(&server, "server", false, "run as a server")
 	flag.Parse()
 	if !server {
@@ -51,27 +53,31 @@ func Startup() {
 		Versions: map[string]HTTPProcess{},
 	}
 	rand.Seed(time.Now().UTC().UnixNano())
-	workspace := os.TempDir() + fmt.Sprintf("/crzy-%d", rand.Intn(99999999))
 	machine := NewStateMachine()
-	updater, err := NewUpdater(workspace, Upstream, machine.action)
+	git, err := NewGitServer(repository, head)
+	if err != nil {
+		log.Printf("could nor initialize GIT server: %v", err)
+		return
+	}
+	updater, err := NewUpdater(git.absRepoPath, Upstream, machine.action)
 	if err != nil {
 		log.Printf("could nor initialize workspace: %v", err)
 		return
 	}
 	heading()
-	log.Printf("temporary directory: %s", workspace)
-	ctx, cancel := context.WithCancel(context.Background())
-	admin := http.NewServeMux()
-	gitHandler := RefreshRepository(updater, NewGITServer(workspace))
-	admin.Handle(fmt.Sprintf("/%s/", repository), gitHandler)
-	api := NewUpstreamAPI(Upstream)
-	admin.Handle("/", api)
+	gitHandler := RefreshRepository(updater, Logging(git.ghx))
+	log.Printf("temporary directory: %s", git.absRepoPath)
+	// admin := http.NewServeMux()
+	// admin.Handle(fmt.Sprintf("/%s/", repository), gitHandler)
+	// api := NewUpstreamAPI(Upstream)
+	// admin.Handle("/", api)
 	proxy := NewReverseProxy(Upstream)
+	ctx, cancel := context.WithCancel(context.Background())
 	g.Go(func() error { /* yellow */ return NewSignalHandler().Run(ctx, cancel) })
-	g.Go(func() error { /* red */ return NewHTTPListener().Run(ctx, ":8080", admin) })
+	g.Go(func() error { /* red */ return NewHTTPListener().Run(ctx, ":8080", gitHandler) })
 	g.Go(func() error { /* blue */ return NewHTTPListener().Run(ctx, ":8081", proxy) })
 	g.Go(func() error { /* green */ return NewCronService().Run(ctx) })
-	g.Go(func() error { return NewStoreService(workspace).Run(ctx) })
+	g.Go(func() error { return NewStoreService(git.absRepoPath).Run(ctx) })
 	g.Go(func() error { return machine.Run(ctx) })
 	if err := g.Wait(); err != nil {
 		log.Printf("program has stopped (%v)", err)
