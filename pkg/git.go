@@ -140,16 +140,28 @@ func (g *GitServer) Update(repo string) {
 				log.Printf("could not clone [%s], error: %v", g.absRepoPath, err)
 				return
 			}
+		}
+		output, err := os.ReadFile(path.Join(g.workspace, ".git/HEAD"))
+		if err != nil {
+			log.Printf("cannot read .git/HEAD: %v", err)
 			return
 		}
-		if 1 == 1 {
-			return
+		current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
+		if current != g.head {
+			if output, err := execCmd(g.workspace, "git", "fetch", "-p"); err != nil {
+				log.Printf("could not run git fetch, error: %v\n%q\n", err, output)
+				return
+			}
+			if output, err := execCmd(g.workspace, "git", "checkout", g.head); err != nil {
+				log.Printf("could not run git checkout, error: %v\n%q\n", err, output)
+				return
+			}
 		}
-		if output, err := execCmd(g.workspace, "git", "fetch", "-p"); err != nil {
+		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
 			log.Printf("could not run git pull, error: %v\n%q\n", err, output)
 			return
 		}
-		output, err := execCmd(g.workspace, "go", "test", "-v", "./...")
+		output, err = execCmd(g.workspace, "go", "test", "-v", "./...")
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Println(v)
 		}
