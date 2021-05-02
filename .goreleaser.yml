@@ -1,5 +1,3 @@
-# This is an example .goreleaser.yml file with some sane defaults.
-# Make sure to check the documentation at http://goreleaser.com
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -14,8 +12,9 @@ builds:
       - darwin
     goarch:
       - amd64
+      - arm64
     ldflags:
-     - -s -w -X main.build={{.Version}} -X main.date={{.Date}}
+     - -s -w -X main.build={{.Version}} -X main.date={{.Date}} -X main.commit={{.ShortCommit}} -X main.builtBy=goreleaser
 archives:
   - replacements:
       darwin: Darwin
@@ -29,7 +28,21 @@ snapshot:
   name_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
+brews:
+  - name: crzy
+    tap:
+      owner: carnage-sh
+      name: homebrew-crzy
+    commit_author:
+      name: Gregory
+      email: 10611760+gregoryguillou@users.noreply.github.com
+    folder: Formula
+    homepage: "https://github.com/carnage-sh/crzy"
+    description: "deploy your tests in less than 3 seconds."
+    license: "Apache-2.0"
+    dependencies:
+      - name: git
+      - name: go
+    install: |
+      bin.install "crzy"
+
