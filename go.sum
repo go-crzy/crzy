@@ -1,3 +1,5 @@
+github.com/go-logr/logr v0.4.0 h1:K7/B1jt6fIBQVd4Owv2MqGQClcgf0R266+7C/QjRcLc=
+github.com/go-logr/logr v0.4.0/go.mod h1:z6/tIYblkpsD+a4lm/fGIIU9mZ+XfAiaFtq7xTgseGU=
 github.com/gregoryguillou/go-git-http-xfer v1.4.1-0.20210501161012-03cf1dc949d9 h1:XS2fG1M0EuvPGPYwr7sPxn9KIHFtLKOIIw9Z1V0ZpWA=
 github.com/gregoryguillou/go-git-http-xfer v1.4.1-0.20210501161012-03cf1dc949d9/go.mod h1:CDO3otz4Zptz8m/foftTMpIIVL4oM4Mlkp9bFzoj9eA=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
