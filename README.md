@@ -1,4 +1,4 @@
-# crzy
+# crzy [![CircleCI](https://circleci.com/gh/carnage-sh/crzy.svg?style=shield)](https://circleci.com/gh/carnage-sh/crzy)
 
 Update your test environments in 3 seconds
 
