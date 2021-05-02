@@ -3,7 +3,6 @@ package pkg
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -13,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/go-logr/logr"
 	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
 )
 
@@ -37,59 +37,61 @@ type GitServer struct {
 	ghx         http.Handler
 	upstream    Upstream
 	action      chan<- func()
+	log         logr.Logger
 }
 
 func NewGitServer(
 	repository, head string,
 	upstream Upstream,
 	action chan<- func()) (*GitServer, error) {
+	log := NewLogger("git")
 
 	if runtime.GOOS == "windows" {
 		extension = ".exe"
 	}
 	gitBinPath, err := exec.LookPath("git")
 	if err != nil {
-		log.Println("git not found...")
+		log.Info("git not found...")
 		return nil, err
 	}
 	gitRootPath, err := os.MkdirTemp("", "crzy")
 	if err != nil {
-		log.Println("unable to create temporary directory")
+		log.Info("unable to create temporary directory")
 		return nil, err
 	}
 	err = os.Chdir(gitRootPath)
 	if err != nil {
-		log.Printf("unable to chdir to %s, %v", gitRootPath, err)
+		log.Error(err, "unable to chdir", "data", gitRootPath)
 		return nil, err
 	}
 
 	ghx, err := githttpxfer.New(gitRootPath, gitBinPath)
 	if err != nil {
-		log.Printf("GitHTTPXfer instance could not be created. %v", err)
+		log.Error(err, "GitHTTPXfer instance could not be created")
 		return nil, err
 	}
 
 	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {
-		log.Printf("prepare run service rpc upload.")
+		log.Info("prepare run service rpc upload.")
 	})
 	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {
-		log.Printf("prepare run service rpc receive.")
+		log.Info("prepare run service rpc receive.")
 	})
 	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {
-		log.Printf("after match routing.")
+		log.Info("after match routing.")
 	})
 	absRepoPath := ghx.Git.GetAbsolutePath(repository)
 
 	os.Mkdir(absRepoPath, os.ModeDir|os.ModePerm)
 	if _, err := execCmd(absRepoPath, "git", "init", "--bare", "--shared"); err != nil {
-		log.Printf("execute command error: %s", err.Error())
+		log.Error(err, "execute command error")
 		return nil, err
 	}
 
 	os.Mkdir(absRepoPath, os.ModeDir|os.ModePerm)
 	workspace, err := filepath.Abs(path.Join(gitRootPath, workarea))
 	if err != nil {
-		log.Printf("Could not get directory for %s. %v", workarea, err)
+		log.Error(err, "Could not get directory", "data", workarea)
 		return nil, err
 	}
 
@@ -103,9 +105,10 @@ func NewGitServer(
 		ghx:         nil,
 		upstream:    upstream,
 		action:      action,
+		log:         log,
 	}
 
-	g.ghx = g.Updater(Logging(ghx))
+	g.ghx = g.Updater(Logging(NewLogger("updater"), ghx))
 	return g, nil
 
 }
@@ -134,83 +137,84 @@ func (g *GitServer) Updater(next http.Handler) http.Handler {
 // Update refresh the workarea from the GIT repository, build the artifact and
 // roll the upstream with the latest version
 func (g *GitServer) Update(repo string) {
+	log := g.log
 	f := func() {
 		if _, err := os.Stat(g.workspace); err != nil && errors.Is(err, os.ErrNotExist) {
 			if _, err := execCmd(g.gitRootPath, "git", "clone", g.absRepoPath, g.workspace); err != nil {
-				log.Printf("could not clone [%s], error: %v", g.absRepoPath, err)
+				log.Error(err, "could not clone", "data", g.absRepoPath)
 				return
 			}
 			return
 		}
 		output, err := os.ReadFile(path.Join(g.workspace, ".git/HEAD"))
 		if err != nil {
-			log.Printf("cannot read .git/HEAD: %v", err)
+			log.Error(err, "cannot read .git/HEAD")
 			return
 		}
 		current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
 		if current != g.head {
 			if output, err := execCmd(g.workspace, "git", "fetch", "-p"); err != nil {
-				log.Printf("could not run git fetch, error: %v\n%q\n", err, output)
+				log.Error(err, "could not run git fetch,", "data", output)
 				return
 			}
 			if output, err := execCmd(g.workspace, "git", "checkout", g.head); err != nil {
-				log.Printf("could not run git checkout, error: %v\n%q\n", err, output)
+				log.Error(err, "could not run git checkout,", "data", output)
 				return
 			}
 		}
 		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
-			log.Printf("could not run git pull, error: %v\n%q\n", err, output)
+			log.Error(err, "could not run git pull,", "data", output)
 			return
 		}
 		output, err = execCmd(g.workspace, "go", "test", "-v", "./...")
 		for _, v := range strings.Split(string(output), "\n") {
-			log.Println(v)
+			log.Info(v)
 		}
 		if err != nil {
-			log.Printf("tests fail, error: %v", err)
+			log.Error(err, "tests fail")
 			return
 		}
 		output, err = execCmd(g.workspace, "git", "log", "-1", "--format=%H", ".")
 		if err != nil {
-			log.Printf("could not get sha, error: %v", err)
+			log.Error(err, "could not get SHA")
 			return
 		}
 		re := regexp.MustCompile(`([0-9a-f]*)`)
 		match := re.FindStringSubmatch(string(output))
 		if len(match) < 2 || len(match[1]) != 40 {
-			log.Printf("SHA unexpected: %q", output)
+			log.Error(errors.New("wrongsha"), string(output))
 			return
 		}
 		sha := match[1][0:16]
 		artipath := path.Join(g.gitRootPath, artifacts)
 		if err := os.Mkdir(artipath, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
-			log.Printf("artipath directory [%s] failed with error: %v", artipath, err)
+			log.Error(err, "artipath directory creation failed", "data", artipath)
 			return
 		}
 		artifact := fmt.Sprintf("%s/%s-%s%s", artipath, repo, sha, extension)
 		exe := fmt.Sprintf("%s-%s%s", repo, sha, extension)
 		output, err = execCmd(g.workspace, "go", "build", "-o", artifact, ".")
 		for _, v := range strings.Split(string(output), "\n") {
-			log.Println(v)
+			log.Info(v)
 		}
 		if err != nil {
-			log.Printf("build fail, error: %v", err)
+			log.Error(err, "build fail")
 			return
 		}
 		old, _ := g.upstream.GetDefault()
 		_, _, err = g.upstream.Lookup(exe + "/v1")
 		if err == nil {
-			log.Printf("executable %s already running", exe)
+			log.Info("executable is already running", "data", exe)
 			return
 		}
 		port, err := g.upstream.NextPort()
 		if err != nil {
-			log.Printf("no port available: %v", err)
+			log.Error(err, "no port available")
 			return
 		}
 		cmd := exec.Command(artifact)
 		cmd.Env = []string{fmt.Sprintf("PORT=%s", port)}
-		log.Printf("starting %s/v1 with port %s", exe, port)
+		log.Info("starting instance", "data", fmt.Sprintf("%s,%s", exe, port))
 		g.upstream.Register(exe, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
 		cmd.Start()
 		if old == "" {
@@ -225,7 +229,7 @@ func (g *GitServer) Update(repo string) {
 		if len(key) < 2 {
 			return
 		}
-		log.Printf("stopping %s/%s", strings.Join(key[0:len(key)-1], "/"), key[len(key)-1])
+		log.Info("stopping instance", "data", fmt.Sprintf("%s,%s", strings.Join(key[0:len(key)-1], "/"), key[len(key)-1]))
 		g.upstream.Unregister(strings.Join(key[0:len(key)-1], "/"), key[len(key)-1])
 	}
 	g.action <- f

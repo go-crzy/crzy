@@ -2,28 +2,32 @@ package pkg
 
 import (
 	"context"
-	"log"
 	"os"
+
+	"github.com/go-logr/logr"
 )
 
 type StoreService struct {
 	workspace string
+	log       logr.Logger
 }
 
 func NewStoreService(workspace string) *StoreService {
 	return &StoreService{
 		workspace: workspace,
+		log:       NewLogger("store"),
 	}
 }
 
 func (m *StoreService) Run(ctx context.Context) error {
-	log.Println("starting datastore....")
+	log := m.log
+	log.Info("starting datastore....")
 	<-ctx.Done()
-	log.Println("stopping datastore....")
+	log.Info("stopping datastore....")
 	err := os.RemoveAll(m.workspace)
 	if err != nil {
-		log.Printf("error deleting %s: %v", m.workspace, err)
+		log.Error(err, "error deleting workspace", "data", m.workspace)
 	}
-	log.Println("datastore stopped....")
+	log.Info("datastore stopped....")
 	return ctx.Err()
 }

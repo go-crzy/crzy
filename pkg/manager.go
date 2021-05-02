@@ -3,8 +3,6 @@ package pkg
 import (
 	"context"
 	"flag"
-	"fmt"
-	"log"
 	"os"
 
 	"golang.org/x/sync/errgroup"
@@ -17,6 +15,7 @@ var (
 )
 
 func Startup() {
+	log := NewLogger("main")
 	usage()
 	heading()
 	g := new(errgroup.Group)
@@ -24,10 +23,10 @@ func Startup() {
 	machine := NewStateMachine()
 	git, err := NewGitServer(repository, head, upstream, machine.action)
 	if err != nil {
-		log.Printf("could nor initialize GIT server: %v", err)
+		log.Error(err, "msg", "could nor initialize GIT server: %v")
 		return
 	}
-	log.Printf("temporary directory: %s", git.absRepoPath)
+	log.Info("temporary directory", "payload", git.absRepoPath)
 	proxy := NewReverseProxy(upstream)
 	ctx, cancel := context.WithCancel(context.Background())
 	g.Go(func() error { /* yellow */ return NewSignalHandler().Run(ctx, cancel) })
@@ -37,17 +36,17 @@ func Startup() {
 	g.Go(func() error { return NewStoreService(git.gitRootPath).Run(ctx) })
 	g.Go(func() error { return machine.Run(ctx) })
 	if err := g.Wait(); err != nil {
-		log.Printf("program has stopped (%v)", err)
+		log.Error(err, "program has stopped")
 	}
 }
 
 func heading() {
-	log.Println()
-	log.Println("  █▀▀ █▀▀█ ▀▀█ █░░█")
-	log.Println("  █░░ █▄▄▀ ▄▀░ █▄▄█")
-	log.Println("  ▀▀▀ ▀░▀▀ ▀▀▀ ▄▄▄█")
-	log.Println()
-	log.Println()
+	log := NewLogger("")
+	log.Info("")
+	log.Info("█▀▀ █▀▀█ ▀▀█ █░░█")
+	log.Info("█░░ █▄▄▀ ▄▀░ █▄▄█")
+	log.Info("▀▀▀ ▀░▀▀ ▀▀▀ ▄▄▄█")
+	log.Info("")
 }
 
 func usage() {
@@ -56,7 +55,6 @@ func usage() {
 	flag.BoolVar(&server, "server", false, "run as a server")
 	flag.Parse()
 	if !server {
-		fmt.Println("crzy start a GIT server to start/stop services")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}

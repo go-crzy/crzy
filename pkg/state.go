@@ -2,30 +2,34 @@ package pkg
 
 import (
 	"context"
-	"log"
+
+	"github.com/go-logr/logr"
 )
 
 type StateMachine struct {
 	action chan func()
 	state  string
+	log    logr.Logger
 }
 
 func NewStateMachine() *StateMachine {
 	return &StateMachine{
 		state:  "initial",
 		action: make(chan func()),
+		log:    NewLogger("machine"),
 	}
 }
 
 func (m *StateMachine) Run(ctx context.Context) error {
-	log.Println("starting state machine....")
+	log := m.log
+	log.Info("starting state machine....")
 	for {
 		select {
 		case f := <-m.action:
-			log.Println("action captured, ready to run....")
+			log.Info("action captured, ready to run....")
 			f()
 		case <-ctx.Done():
-			log.Println("stopping state machine....")
+			log.Info("stopping state machine....")
 			close(m.action)
 			return ctx.Err()
 		}
