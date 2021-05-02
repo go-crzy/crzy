@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 
 	"golang.org/x/sync/errgroup"
@@ -14,9 +15,9 @@ var (
 	server     = false
 )
 
-func Startup() {
+func Startup(version, commit, date, builtBy string) {
 	log := NewLogger("main")
-	usage()
+	usage(version, commit, date, builtBy)
 	heading()
 	g := new(errgroup.Group)
 	upstream := NewUpstream()
@@ -49,11 +50,17 @@ func heading() {
 	log.Info("")
 }
 
-func usage() {
+func usage(version, commit, date, builtBy string) {
+	v := false
 	flag.StringVar(&repository, "repository", "myrepo", "GIT repository target name")
 	flag.StringVar(&head, "head", "main", "GIT repository target name")
 	flag.BoolVar(&server, "server", false, "run as a server")
+	flag.BoolVar(&v, "version", false, "display the version")
 	flag.Parse()
+	if v {
+		fmt.Printf("crzy version %s\n", version)
+		os.Exit(0)
+	}
 	if !server {
 		flag.PrintDefaults()
 		os.Exit(1)
