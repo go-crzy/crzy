@@ -13,11 +13,17 @@ builds:
       - arm64
     ldflags:
       - -s -w -X main.build={{.Version}} -X main.date={{.Date}} -X main.commit={{.ShortCommit}} -X main.builtBy=goreleaser
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - windows
+    goarch:
+      - amd64
+    ldflags:
+      - -s -w -X main.build={{.Version}} -X main.date={{.Date}} -X main.commit={{.ShortCommit}} -X main.builtBy=goreleaser
 archives:
   - replacements:
-      darwin: darwin
-      linux: linux
-      windows: windows
+      386: i386
       amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
