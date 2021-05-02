@@ -15,11 +15,15 @@ install and run `crzy`:
 
 ```shell
 go get github.com/carnage-sh/crzy
-crzy -server
+crzy -server -repository color.git
 ```
 
+> Note: we assume you are working on the `main` branch, if that is not the
+> case, add the `-head` flag with the name of your branch to the `crzy`
+> command.
+
 This commands above starts the GIT server that can be used to push you
-program to the `http://localhost:8080/myrepo/.git` URL. It also creates
+program to the `http://localhost:8080/color.git` URL. It also creates
 a proxy server on `http://localhost:8081`. You can then push your project
 the to `crzy`, with a simple `git push` command. Here is a complete example
 that includes the setup:
@@ -27,7 +31,7 @@ that includes the setup:
 ```shell
 git clone https://github.com/carnage-sh/color.git color
 cd color
-git remote add server http://localhost:8080/myrepo/.git
+git remote add server http://localhost:8080/color.git
 git push server
 ```
 
@@ -51,6 +55,6 @@ need support for another programming language or protocol or simply cannot
 figure out how to make it work, do not hesitate to open an
 [issue](https://github.com/carnage-sh/crzy/issues).
 
-## Known issues
+## known issues
 
 `crzy` does not support Windows
