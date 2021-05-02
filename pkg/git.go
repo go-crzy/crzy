@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -14,17 +16,37 @@ import (
 	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
 )
 
+const (
+	workarea  = "workarea"
+	artifacts = "execs"
+)
+
+var (
+	ErrRepositoryNotSync = errors.New("notsync")
+	ErrCommitNotFound    = errors.New("notfound")
+	extension            = ""
+)
+
 type GitServer struct {
 	gitRootPath string
 	gitBinPath  string
 	repoName    string
 	absRepoPath string
+	workspace   string
 	head        string
-	ghx         *githttpxfer.GitHTTPXfer
+	ghx         http.Handler
+	upstream    Upstream
+	action      chan<- func()
 }
 
-func NewGitServer(repository, head string) (*GitServer, error) {
+func NewGitServer(
+	repository, head string,
+	upstream Upstream,
+	action chan<- func()) (*GitServer, error) {
 
+	if runtime.GOOS == "windows" {
+		extension = ".exe"
+	}
 	gitBinPath, err := exec.LookPath("git")
 	if err != nil {
 		log.Println("git not found...")
@@ -64,24 +86,28 @@ func NewGitServer(repository, head string) (*GitServer, error) {
 		return nil, err
 	}
 
-	return &GitServer{
+	os.Mkdir(absRepoPath, os.ModeDir|os.ModePerm)
+	workspace, err := filepath.Abs(path.Join(gitRootPath, workarea))
+	if err != nil {
+		log.Printf("Could not get directory for %s. %v", workarea, err)
+		return nil, err
+	}
+
+	g := &GitServer{
 		gitRootPath: gitRootPath,
 		gitBinPath:  gitBinPath,
 		repoName:    repository,
 		absRepoPath: absRepoPath,
+		workspace:   workspace,
 		head:        head,
-		ghx:         ghx,
-	}, nil
-}
+		ghx:         nil,
+		upstream:    upstream,
+		action:      action,
+	}
 
-func (g *GitServer) cleanupRepository() {
-	os.RemoveAll(g.gitRootPath)
-}
+	g.ghx = g.Updater(Logging(ghx))
+	return g, nil
 
-func (g *GitServer) Updater(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-	})
 }
 
 func execCmd(dir string, name string, arg ...string) ([]byte, error) {
@@ -90,127 +116,94 @@ func execCmd(dir string, name string, arg ...string) ([]byte, error) {
 	return c.CombinedOutput()
 }
 
-var (
-	ErrRepositoryNotSync = errors.New("notsync")
-	ErrCommitNotFound    = errors.New("notfound")
-)
-
 type Updater interface {
 	Update(repo string) (string, error)
 }
 
-type DefaultUpdater struct {
-	WorkspaceDir string
-	action       chan<- func()
-	upstream     Upstreamer
-}
-
-func NewUpdater(workspace string, upstream Upstreamer, action chan<- func()) (Updater, error) {
-	if workspace == "" {
-		return nil, errors.New("unknownworkspace")
-	}
-	if err := os.Mkdir(workspace, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
-		return nil, err
-	}
-	return &DefaultUpdater{
-		WorkspaceDir: workspace,
-		action:       action,
-		upstream:     upstream,
-	}, nil
+func (g *GitServer) Updater(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		method := r.Method
+		next.ServeHTTP(w, r)
+		if path == fmt.Sprintf("/%s/git-receive-pack", g.repoName) && method == http.MethodPost {
+			g.Update(g.repoName)
+		}
+	})
 }
 
 // Update refresh the workarea and returns the 16-characters of the last commit
-func (git *DefaultUpdater) Update(repo string) (string, error) {
-	workarea := "workarea"
-	workpath := fmt.Sprintf("%s/%s", git.WorkspaceDir, workarea)
-	workrepo := fmt.Sprintf("%s/%s/%s", git.WorkspaceDir, workarea, repo)
-	if err := os.Mkdir(workpath, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
-		return "", err
-	}
-	artifacts := "execs"
-	extension := ""
-	if runtime.GOOS == "windows" {
-		extension = ".exe"
-	}
-	artipath := fmt.Sprintf("%s/%s", git.WorkspaceDir, artifacts)
-	if err := os.Mkdir(artipath, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
-		return "", err
-	}
+func (g *GitServer) Update(repo string) {
 	f := func() {
-		if _, err := os.Stat(workrepo); os.IsNotExist(err) {
-			repopath := fmt.Sprintf("%s/%s/.git", git.WorkspaceDir, repo)
-			if _, err := os.Stat(repopath); os.IsNotExist(err) {
-				log.Printf("sync failed, repository [%s] does not exists", repopath)
-				return
-			}
-			cmd := exec.Command("git", "clone", repopath, repo)
-			cmd.Dir = workpath
-			err := cmd.Run()
-			if err != nil {
-				log.Printf("git clone failed; error: %v", err)
-				return
-			}
-		}
-		cmd := exec.Command("git", "pull")
-		cmd.Dir = workrepo
-		err := cmd.Run()
-		if err != nil {
-			log.Printf("git pull [%s] failed; error: %v", repo, err)
+		err := os.Mkdir(g.workspace, os.ModeDir|os.ModePerm)
+		if err != nil && !os.IsExist(err) {
+			log.Printf("workspace directory [%s] failed with error: %v", g.workspace, err)
 			return
 		}
-		cmd = exec.Command("git", "log", "-1", "--format=%H", ".")
-		cmd.Dir = workrepo
-		out, err := cmd.Output()
 		if err != nil {
-			log.Printf("git log failed; error: %v", err)
+			if _, err := execCmd("", "git", "clone", path.Join(g.absRepoPath, ".git"), g.workspace); err != nil {
+				log.Printf("could not clone [%s], error: %v", g.absRepoPath, err)
+				return
+			}
+		}
+		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
+			log.Printf("could not run git pull, error: %v\n%q\n", err, output)
+			return
+		}
+		output, err := execCmd(g.workspace, "go", "test", "-v", "./...")
+		for _, v := range strings.Split(string(output), "\n") {
+			log.Println(v)
+		}
+		if err != nil {
+			log.Printf("tests fail, error: %v", err)
+			return
+		}
+		output, err = execCmd(g.workspace, "git", "log", "-1", "--format=%H", ".")
+		if err != nil {
+			log.Printf("could not get sha, error: %v", err)
 			return
 		}
 		re := regexp.MustCompile(`([0-9a-f]*)`)
-		match := re.FindStringSubmatch(string(out))
+		match := re.FindStringSubmatch(string(output))
 		if len(match) < 2 || len(match[1]) != 40 {
-			log.Printf("SHA unexpected: %q", out)
+			log.Printf("SHA unexpected: %q", output)
 			return
 		}
 		sha := match[1][0:16]
-		artifact := fmt.Sprintf("%s/%s/%s-%s%s", git.WorkspaceDir, artifacts, repo, sha, extension)
-		exe := fmt.Sprintf("%s-%s%s", repo, sha, extension)
-		cmd = exec.Command("go", "test", "-v", "./...")
-		cmd.Dir = workrepo
-		out, err = cmd.Output()
-		if err != nil {
-			log.Printf("Error testing the project: %v", err)
+		artipath := path.Join(g.gitRootPath, artifacts)
+		if err := os.Mkdir(artipath, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
+			log.Printf("artipath directory [%s] failed with error: %v", artipath, err)
 			return
 		}
-		for _, v := range strings.Split(string(out), "\n") {
+		artifact := fmt.Sprintf("%s/%s-%s%s", artipath, repo, sha, extension)
+		exe := fmt.Sprintf("%s-%s%s", repo, sha, extension)
+		output, err = execCmd(g.workspace, "go", "build", "-o", artifact, ".")
+		for _, v := range strings.Split(string(output), "\n") {
 			log.Println(v)
 		}
-		cmd = exec.Command("go", "build", "-o", artifact, ".")
-		cmd.Dir = workrepo
-		err = cmd.Run()
 		if err != nil {
-			log.Printf("Error building project: %v", err)
+			log.Printf("build fail, error: %v", err)
 			return
 		}
-		old, _ := git.upstream.GetDefault()
-		_, _, err = git.upstream.Lookup(exe + "/v1")
+		old, _ := g.upstream.GetDefault()
+		_, _, err = g.upstream.Lookup(exe + "/v1")
 		if err == nil {
 			log.Printf("executable %s already running", exe)
 			return
 		}
-		port, err := git.upstream.NextPort()
+		port, err := g.upstream.NextPort()
 		if err != nil {
 			log.Printf("no port available: %v", err)
 			return
 		}
-		cmd = exec.Command(artifact)
+		cmd := exec.Command(artifact)
 		cmd.Env = []string{fmt.Sprintf("PORT=%s", port)}
 		log.Printf("starting %s/v1 with port %s", exe, port)
-		git.upstream.Register(exe, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
+		g.upstream.Register(exe, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
 		cmd.Start()
 		if old == "" {
 			return
 		}
-		_, cmd, err = git.upstream.Lookup(old)
+		_, cmd, err = g.upstream.Lookup(old)
 		if err != nil {
 			return
 		}
@@ -220,8 +213,7 @@ func (git *DefaultUpdater) Update(repo string) (string, error) {
 			return
 		}
 		log.Printf("stopping %s/%s", strings.Join(key[0:len(key)-1], "/"), key[len(key)-1])
-		git.upstream.Unregister(strings.Join(key[0:len(key)-1], "/"), key[len(key)-1])
+		g.upstream.Unregister(strings.Join(key[0:len(key)-1], "/"), key[len(key)-1])
 	}
-	git.action <- f
-	return "", nil
+	g.action <- f
 }

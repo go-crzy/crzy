@@ -12,10 +12,16 @@ type HTTPProcess struct {
 	Cmd  *exec.Cmd
 }
 
-type DefaultUpstreams struct {
+type DefaultUpstream struct {
 	sync.RWMutex
 	Versions map[string]HTTPProcess
 	Default  *string
+}
+
+func NewUpstream() Upstream {
+	return &DefaultUpstream{
+		Versions: map[string]HTTPProcess{},
+	}
 }
 
 // ErrServiceNotFound default service
@@ -25,7 +31,7 @@ var (
 )
 
 // Upstreamer the backend registration interface
-type Upstreamer interface {
+type Upstream interface {
 	Register(string, string, HTTPProcess, bool)
 	SetDefault(string, string) error
 	GetDefault() (string, error)
@@ -35,7 +41,7 @@ type Upstreamer interface {
 }
 
 // Register an upstream server for a service version
-func (u *DefaultUpstreams) Register(name, version string, process HTTPProcess, def bool) {
+func (u *DefaultUpstream) Register(name, version string, process HTTPProcess, def bool) {
 	u.Lock()
 	defer u.Unlock()
 	key := fmt.Sprintf("%s/%s", name, version)
@@ -46,7 +52,7 @@ func (u *DefaultUpstreams) Register(name, version string, process HTTPProcess, d
 }
 
 // SetDefault an upstream server for a service version
-func (u *DefaultUpstreams) SetDefault(name, version string) error {
+func (u *DefaultUpstream) SetDefault(name, version string) error {
 	u.Lock()
 	defer u.Unlock()
 	key := fmt.Sprintf("%s/%s", name, version)
@@ -59,7 +65,7 @@ func (u *DefaultUpstreams) SetDefault(name, version string) error {
 }
 
 // GetDefault an upstream server for a service version
-func (u *DefaultUpstreams) GetDefault() (string, error) {
+func (u *DefaultUpstream) GetDefault() (string, error) {
 	u.Lock()
 	defer u.Unlock()
 	if u.Default == nil {
@@ -69,7 +75,7 @@ func (u *DefaultUpstreams) GetDefault() (string, error) {
 }
 
 // Next provides a port
-func (u *DefaultUpstreams) NextPort() (string, error) {
+func (u *DefaultUpstream) NextPort() (string, error) {
 	u.Lock()
 	defer u.Unlock()
 	for i := 8090; i < 8100; i++ {
@@ -89,7 +95,7 @@ func (u *DefaultUpstreams) NextPort() (string, error) {
 }
 
 // Unregister an upstream server for a service version
-func (u *DefaultUpstreams) Unregister(name, version string) {
+func (u *DefaultUpstream) Unregister(name, version string) {
 	u.Lock()
 	defer u.Unlock()
 	key := fmt.Sprintf("%s/%s", name, version)
@@ -100,7 +106,7 @@ func (u *DefaultUpstreams) Unregister(name, version string) {
 }
 
 // Lookup returns the port for the version to find
-func (u *DefaultUpstreams) Lookup(service string) (string, *exec.Cmd, error) {
+func (u *DefaultUpstream) Lookup(service string) (string, *exec.Cmd, error) {
 	u.RLock()
 	defer u.RUnlock()
 	if service == "" || service == "main" {
