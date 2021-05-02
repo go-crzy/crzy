@@ -140,6 +140,7 @@ func (g *GitServer) Update(repo string) {
 				log.Printf("could not clone [%s], error: %v", g.absRepoPath, err)
 				return
 			}
+			return
 		}
 		output, err := os.ReadFile(path.Join(g.workspace, ".git/HEAD"))
 		if err != nil {
