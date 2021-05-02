@@ -142,7 +142,10 @@ func (g *GitServer) Update(repo string) {
 			}
 			return
 		}
-		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
+		if 1 == 1 {
+			return
+		}
+		if output, err := execCmd(g.workspace, "git", "fetch", "-p"); err != nil {
 			log.Printf("could not run git pull, error: %v\n%q\n", err, output)
 			return
 		}
