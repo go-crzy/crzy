@@ -34,7 +34,7 @@ func Startup() {
 	g.Go(func() error { /* red */ return NewHTTPListener().Run(ctx, ":8080", git.ghx) })
 	g.Go(func() error { /* blue */ return NewHTTPListener().Run(ctx, ":8081", proxy) })
 	g.Go(func() error { /* green */ return NewCronService().Run(ctx) })
-	g.Go(func() error { return NewStoreService(git.absRepoPath).Run(ctx) })
+	g.Go(func() error { return NewStoreService(git.gitRootPath).Run(ctx) })
 	g.Go(func() error { return machine.Run(ctx) })
 	if err := g.Wait(); err != nil {
 		log.Printf("program has stopped (%v)", err)
