@@ -131,19 +131,16 @@ func (g *GitServer) Updater(next http.Handler) http.Handler {
 	})
 }
 
-// Update refresh the workarea and returns the 16-characters of the last commit
+// Update refresh the workarea from the GIT repository, build the artifact and
+// roll the upstream with the latest version
 func (g *GitServer) Update(repo string) {
 	f := func() {
-		err := os.Mkdir(g.workspace, os.ModeDir|os.ModePerm)
-		if err != nil && !os.IsExist(err) {
-			log.Printf("workspace directory [%s] failed with error: %v", g.workspace, err)
-			return
-		}
-		if err != nil {
-			if _, err := execCmd("", "git", "clone", path.Join(g.absRepoPath, ".git"), g.workspace); err != nil {
+		if _, err := os.Stat(g.workspace); err != nil && errors.Is(err, os.ErrNotExist) {
+			if _, err := execCmd(g.gitRootPath, "git", "clone", g.absRepoPath, g.workspace); err != nil {
 				log.Printf("could not clone [%s], error: %v", g.absRepoPath, err)
 				return
 			}
+			return
 		}
 		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
 			log.Printf("could not run git pull, error: %v\n%q\n", err, output)
