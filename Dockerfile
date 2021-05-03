@@ -1,8 +1,16 @@
 FROM golang:1.16-alpine as builder
 RUN apk add --no-cache wget git
+
+ARG SOURCE_COMMIT
+ARG DOCKER_TAG
+ENV SOURCE_COMMIT $SOURCE_COMMIT
+ENV DOCKER_TAG $DOCKER_TAG
+
 WORKDIR /build
 COPY . . 
-RUN go mod download && CGO_ENABLED=0 go build -o crzy .
+RUN go mod download && CGO_ENABLED=0 go build \
+  -ldflags "-X main.version=$DOCKER_TAG main.commit=$SOURCE_COMMIT" \
+  -o crzy .
 
 FROM golang:1.16-alpine
 RUN apk add --no-cache wget git
