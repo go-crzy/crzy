@@ -63,6 +63,19 @@ type Upstream interface {
 	Unregister(string, string)
 	Lookup(string) (string, *exec.Cmd, error)
 	NextPort() (string, error)
+	KillAll() error
+}
+
+func (u *DefaultUpstream) KillAll() error {
+	u.Lock()
+	defer u.Unlock()
+	for k, v := range u.Versions {
+		if v.Cmd.Process != nil {
+			v.Cmd.Process.Kill()
+			delete(u.Versions, k)
+		}
+	}
+	return nil
 }
 
 // Register an upstream server for a service version

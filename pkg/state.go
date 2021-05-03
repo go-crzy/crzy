@@ -7,16 +7,18 @@ import (
 )
 
 type StateMachine struct {
-	action chan func()
-	state  string
-	log    logr.Logger
+	action   chan func()
+	state    string
+	log      logr.Logger
+	upstream Upstream
 }
 
-func NewStateMachine() *StateMachine {
+func NewStateMachine(upstream Upstream) *StateMachine {
 	return &StateMachine{
-		state:  "initial",
-		action: make(chan func()),
-		log:    NewLogger("machine"),
+		state:    "initial",
+		action:   make(chan func()),
+		log:      NewLogger("machine"),
+		upstream: upstream,
 	}
 }
 
@@ -30,6 +32,7 @@ func (m *StateMachine) Run(ctx context.Context) error {
 			f()
 		case <-ctx.Done():
 			log.Info("stopping state machine....")
+			m.upstream.KillAll()
 			close(m.action)
 			return ctx.Err()
 		}
