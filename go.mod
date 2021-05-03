@@ -3,6 +3,7 @@ module github.com/go-crzy/crzy
 go 1.16
 
 require (
+	github.com/fatih/color v1.10.0
 	github.com/go-logr/logr v0.4.0
 	github.com/gregoryguillou/go-git-http-xfer v1.4.1-0.20210501161012-03cf1dc949d9
 	github.com/robfig/cron/v3 v3.0.1

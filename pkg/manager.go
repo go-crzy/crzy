@@ -13,6 +13,7 @@ var (
 	repository = "myrepo"
 	head       = "master"
 	server     = false
+	colorize   = false
 )
 
 func Startup(version, commit, date, builtBy string) {
@@ -56,6 +57,7 @@ func usage(version, commit, date, builtBy string) {
 	flag.StringVar(&head, "head", "main", "GIT repository target name")
 	flag.BoolVar(&server, "server", false, "run as a server")
 	flag.BoolVar(&v, "version", false, "display the version")
+	flag.BoolVar(&colorize, "color", false, "colorize logs")
 	flag.Parse()
 	if v {
 		fmt.Printf("crzy version %s\n", version)
