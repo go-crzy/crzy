@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/carnage-sh/crzy/pkg"
+	"github.com/go-crzy/crzy/pkg"
 )
 
 var (

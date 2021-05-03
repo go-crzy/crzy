@@ -1,4 +1,4 @@
-module github.com/carnage-sh/crzy
+module github.com/go-crzy/crzy
 
 go 1.16
 

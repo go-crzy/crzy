@@ -1,4 +1,4 @@
-# crzy [![CircleCI](https://circleci.com/gh/carnage-sh/crzy.svg?style=shield)](https://circleci.com/gh/carnage-sh/crzy)
+# crzy [![CircleCI](https://circleci.com/gh/go-crzy/crzy.svg?style=shield)](https://circleci.com/gh/go-crzy/crzy)
 
 Update your test environments in 3 seconds
 
@@ -10,11 +10,11 @@ Update your test environments in 3 seconds
 ## a simple example
 
 The best way to understand how it works is to use it. You can check
-[carnage-sh/color](https://github.com/carnage-sh/color) as an example. First
+[go-crzy/color](https://github.com/go-crzy/color) as an example. First
 install and run `crzy`:
 
 ```shell
-go get github.com/carnage-sh/crzy
+go get github.com/go-crzy/crzy
 crzy -server -repository color.git
 ```
 
@@ -29,7 +29,7 @@ the to `crzy`, with a simple `git push` command. Here is a complete example
 that includes the setup:
 
 ```shell
-git clone https://github.com/carnage-sh/color.git color
+git clone https://github.com/go-crzy/color.git color
 cd color
 git remote add server http://localhost:8080/color.git
 git push server
@@ -53,7 +53,7 @@ with it:
 `crzy` will be improved to manage broader use cases. If you like the idea,
 need support for another programming language or protocol or simply cannot
 figure out how to make it work, do not hesitate to open an
-[issue](https://github.com/carnage-sh/crzy/issues).
+[issue](https://github.com/go-crzy/crzy/issues).
 
 ## known issues
 
