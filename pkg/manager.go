@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -20,9 +21,10 @@ func Startup(version, commit, date, builtBy string) {
 	log := NewLogger("main")
 	usage(version, commit, date, builtBy)
 	heading()
-	g := new(errgroup.Group)
+	startGroup := new(errgroup.Group)
+	endGroup := new(errgroup.Group)
 	upstream := NewUpstream()
-	machine := NewStateMachine()
+	machine := NewStateMachine(upstream)
 	git, err := NewGitServer(repository, head, upstream, machine.action)
 	if err != nil {
 		log.Error(err, "msg", "could nor initialize GIT server: %v")
@@ -30,15 +32,21 @@ func Startup(version, commit, date, builtBy string) {
 	}
 	log.Info("temporary directory", "payload", git.absRepoPath)
 	proxy := NewReverseProxy(upstream)
-	ctx, cancel := context.WithCancel(context.Background())
-	g.Go(func() error { /* yellow */ return NewSignalHandler().Run(ctx, cancel) })
-	g.Go(func() error { /* red */ return NewHTTPListener().Run(ctx, ":8080", git.ghx) })
-	g.Go(func() error { /* blue */ return NewHTTPListener().Run(ctx, ":8081", proxy) })
-	g.Go(func() error { /* green */ return NewCronService().Run(ctx) })
-	g.Go(func() error { return NewStoreService(git.gitRootPath).Run(ctx) })
-	g.Go(func() error { return machine.Run(ctx) })
-	if err := g.Wait(); err != nil {
-		log.Error(err, "program has stopped")
+	startContext, startCancel := context.WithCancel(context.Background())
+	endContext, endCancel := context.WithCancel(context.Background())
+	startGroup.Go(func() error { return NewSignalHandler().Run(startContext, startCancel) })
+	startGroup.Go(func() error { return NewHTTPListener().Run(startContext, ":8080", git.ghx) })
+	startGroup.Go(func() error { return NewHTTPListener().Run(startContext, ":8081", proxy) })
+	startGroup.Go(func() error { return NewCronService().Run(startContext) })
+	endGroup.Go(func() error { return NewStoreService(git.gitRootPath).Run(endContext) })
+	startGroup.Go(func() error { return machine.Run(startContext) })
+	if err := startGroup.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		log.Error(err, "compute have stopped with error")
+	}
+	log.Info("stopping store")
+	endCancel()
+	if err := startGroup.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		log.Error(err, "store has stopped with error")
 	}
 }
 
