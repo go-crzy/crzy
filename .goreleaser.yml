@@ -31,13 +31,13 @@ changelog:
 brews:
   - name: crzy
     tap:
-      owner: carnage-sh
+      owner: go-crzy
       name: homebrew-crzy
     commit_author:
       name: Gregory
       email: 10611760+gregoryguillou@users.noreply.github.com
     folder: Formula
-    homepage: "https://github.com/carnage-sh/crzy"
+    homepage: "https://github.com/go-crzy/crzy"
     description: "deploy your tests in less than 3 seconds."
     license: "Apache-2.0"
     dependencies:
