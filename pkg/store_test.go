@@ -9,9 +9,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// TestStoreClose makes sure the directory associated with the store is cleaned
+// Test_StoreClose makes sure the directory associated with the store is cleaned
 // up when the program stops.
-func TestStoreClose(t *testing.T) {
+func Test_StoreClose(t *testing.T) {
 	dir := "./store-test"
 	err := os.Mkdir(dir, os.ModeDir|os.ModePerm)
 	if err != nil {
