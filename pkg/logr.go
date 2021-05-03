@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 )
 
@@ -110,6 +111,29 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 			n = len(data)
 		}
 		log += fmt.Sprintf(" [%s]", data[0:n])
+	}
+	colorPrint(c.name, log)
+}
+
+func colorPrint(name, log string) {
+	if colorize {
+		fgColor := color.FgRed
+		switch name {
+		case "":
+			fgColor = color.FgYellow
+		case "machine":
+			fgColor = color.FgBlue
+		case "store":
+			fgColor = color.FgCyan
+		case "http":
+			fgColor = color.FgRed
+		case "main":
+			fgColor = color.FgGreen
+		default:
+			fgColor = color.FgMagenta
+		}
+		color.Set(fgColor)
+		defer color.Unset()
 	}
 	fmt.Println(log)
 }
