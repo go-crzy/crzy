@@ -116,7 +116,7 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 }
 
 func colorPrint(name, log string) {
-	if colorize {
+	if conf.Main.Color {
 		fgColor := color.FgRed
 		switch name {
 		case "":
