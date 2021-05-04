@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	conf       = &config{}
+	conf = &config{}
 )
 
 type config struct {
@@ -72,24 +72,28 @@ func heading() {
 }
 
 func usage(version, commit, date, builtBy string) {
-	v := false
 	configFile := ""
-	repository := "myrepo"
-	head       := "master"
-	server     := false
-	colorize   := false
+	flag.StringVar(&configFile, "config", "crzy.yaml", "configuration file")
+	repository := ""
+	head := ""
+	server := false
+	colorize := false
 	flag.StringVar(&repository, "repository", "myrepo", "GIT repository target name")
 	flag.StringVar(&head, "head", "main", "GIT repository target name")
-	flag.StringVar(&configFile, "config", "crzy.yaml", "configuration file")
-	flag.BoolVar(&server, "server", false, "run as a server")
-	flag.BoolVar(&v, "version", false, "display the version")
 	flag.BoolVar(&colorize, "color", false, "colorize logs")
+	flag.BoolVar(&server, "server", false, "run as a server")
+	v := false
+	flag.BoolVar(&v, "version", false, "display the version")
 	flag.Parse()
+	if v {
+		fmt.Printf("crzy version %s\n", version)
+		os.Exit(0)
+	}
 	getConfig(configFile)
-	if repository != "myrepo" {
+	if repository != "myrepo" || conf.Main.Repository == "" {
 		conf.Main.Repository = repository
 	}
-	if head != "main" { 
+	if head != "main" || conf.Main.Head == "" {
 		conf.Main.Head = head
 	}
 	if colorize {
@@ -98,11 +102,7 @@ func usage(version, commit, date, builtBy string) {
 	if server {
 		conf.Main.Server = server
 	}
-	if v {
-		fmt.Printf("crzy version %s\n", version)
-		os.Exit(0)
-	}
-	if !server {
+	if !conf.Main.Server {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}

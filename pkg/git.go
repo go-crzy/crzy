@@ -207,15 +207,15 @@ func (g *GitServer) Update(repo string) {
 			log.Info("executable is already running", "data", exe)
 			return
 		}
-		port, err := g.upstream.NextPort()
+		addr, err := g.upstream.NextAddr()
 		if err != nil {
-			log.Error(err, "no port available")
+			log.Error(err, "no address available")
 			return
 		}
 		cmd := exec.Command(artifact)
-		cmd.Env = []string{fmt.Sprintf("PORT=%s", port)}
-		log.Info("starting instance", "data", fmt.Sprintf("%s,%s", exe, port))
-		g.upstream.Register(exe, "v1", HTTPProcess{Addr: port, Cmd: cmd}, true)
+		cmd.Env = []string{fmt.Sprintf("ADDR=%s", addr)}
+		log.Info("starting instance", "data", fmt.Sprintf("%s,%s", exe, addr))
+		g.upstream.Register(exe, "v1", HTTPProcess{Addr: addr, Cmd: cmd}, true)
 		cmd.Start()
 		if old == "" {
 			return

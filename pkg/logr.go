@@ -88,16 +88,22 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 		msg,
 	)
 	i := 0
-	payload := c.keysAndValues
+	keys := map[string]string{}
+	if msg, ok := c.keysAndValues["msg"]; ok {
+		keys["msg"] = msg
+	}
+	if data, ok := c.keysAndValues["data"]; ok {
+		keys["data"] = data
+	}
 	for i < len(keysAndValues)-1 {
 		key := fmt.Sprintf("%v", keysAndValues[i])
 		val := fmt.Sprintf("%v", keysAndValues[i+1])
 		i += 2
 		if key == "msg" || key == "data" {
-			payload[key] = val
+			keys[key] = val
 		}
 	}
-	if msg, ok := payload["msg"]; ok {
+	if msg, ok := keys["msg"]; ok {
 		log += fmt.Sprintf(", msg:%-50s", msg)
 		if len(msg) > 50 {
 			log += "... "
@@ -105,7 +111,7 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 			log += "    "
 		}
 	}
-	if data, ok := payload["data"]; ok {
+	if data, ok := keys["data"]; ok {
 		n := 50
 		if len(data) < n {
 			n = len(data)
@@ -129,6 +135,14 @@ func colorPrint(name, log string) {
 			fgColor = color.FgRed
 		case "main":
 			fgColor = color.FgGreen
+		case "git":
+			fgColor = color.FgHiYellow
+		case "updater":
+			fgColor = color.FgHiBlue
+		case "signal":
+			fgColor = color.FgHiRed
+		case "cron":
+			fgColor = color.FgHiGreen
 		default:
 			fgColor = color.FgMagenta
 		}
