@@ -1,4 +1,5 @@
 main:
+  head: main
   server: true
   color: true
   repository: color.git

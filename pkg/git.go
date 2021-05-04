@@ -154,16 +154,16 @@ func (g *GitServer) Update(repo string) {
 		current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
 		if current != g.head {
 			if output, err := execCmd(g.workspace, "git", "fetch", "-p"); err != nil {
-				log.Error(err, "could not run git fetch,", "data", output)
+				log.Error(err, "could not run git fetch,", "data", string(output))
 				return
 			}
 			if output, err := execCmd(g.workspace, "git", "checkout", g.head); err != nil {
-				log.Error(err, "could not run git checkout,", "data", output)
+				log.Error(err, "could not run git checkout,", "data", string(output))
 				return
 			}
 		}
 		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
-			log.Error(err, "could not run git pull,", "data", output)
+			log.Error(err, "could not run git pull,", "data", string(output))
 			return
 		}
 		output, err = execCmd(g.workspace, "go", "test", "-v", "./...")
