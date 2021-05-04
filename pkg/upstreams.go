@@ -25,7 +25,7 @@ func NewReverseProxy(u Upstream) http.HandlerFunc {
 		(&httputil.ReverseProxy{
 			Director: func(req *http.Request) {
 				req.URL.Scheme = "http"
-				req.URL.Host = "localhost" + v
+				req.URL.Host = v
 			},
 			Transport: transport,
 		}).ServeHTTP(w, r)
@@ -52,7 +52,7 @@ func NewUpstream() Upstream {
 // ErrServiceNotFound default service
 var (
 	ErrServiceNotFound = errors.New("notfound")
-	ErrNoAvailablePort = errors.New("noport")
+	ErrNoAvailableAddr = errors.New("noaddr")
 )
 
 // Upstreamer the backend registration interface
@@ -62,7 +62,7 @@ type Upstream interface {
 	GetDefault() (string, error)
 	Unregister(string, string)
 	Lookup(string) (string, *exec.Cmd, error)
-	NextPort() (string, error)
+	NextAddr() (string, error)
 	KillAll() error
 }
 
@@ -112,12 +112,12 @@ func (u *DefaultUpstream) GetDefault() (string, error) {
 	return *u.Default, nil
 }
 
-// Next provides a port
-func (u *DefaultUpstream) NextPort() (string, error) {
+// Next provides an address
+func (u *DefaultUpstream) NextAddr() (string, error) {
 	u.Lock()
 	defer u.Unlock()
 	for i := 8090; i < 8100; i++ {
-		addr := fmt.Sprintf(":%d", i)
+		addr := fmt.Sprintf("localhost:%d", i)
 		found := false
 		for k := range u.Versions {
 			if addr == u.Versions[k].Addr {
@@ -129,7 +129,7 @@ func (u *DefaultUpstream) NextPort() (string, error) {
 			return addr, nil
 		}
 	}
-	return "", ErrNoAvailablePort
+	return "", ErrNoAvailableAddr
 }
 
 // Unregister an upstream server for a service version
@@ -143,7 +143,7 @@ func (u *DefaultUpstream) Unregister(name, version string) {
 	}
 }
 
-// Lookup returns the port for the version to find
+// Lookup returns the address for the version to find
 func (u *DefaultUpstream) Lookup(service string) (string, *exec.Cmd, error) {
 	u.RLock()
 	defer u.RUnlock()
