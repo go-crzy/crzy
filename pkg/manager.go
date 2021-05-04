@@ -5,9 +5,12 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"sync"
 
 	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -15,11 +18,25 @@ var (
 	head       = "master"
 	server     = false
 	colorize   = false
+	configFile = "crzy.yaml"
+	conf       = &config{}
 )
+
+type config struct {
+	sync.Mutex
+	Main struct {
+		Server     bool
+		Color      bool
+		Repository string
+		ApiPort    int `yaml:"api_port"`
+		ProxyPort  int `yaml:"proxy_port"`
+	}
+}
 
 func Startup(version, commit, date, builtBy string) {
 	log := NewLogger("main")
 	usage(version, commit, date, builtBy)
+	getConfig()
 	heading()
 	startGroup := new(errgroup.Group)
 	endGroup := new(errgroup.Group)
@@ -63,6 +80,7 @@ func usage(version, commit, date, builtBy string) {
 	v := false
 	flag.StringVar(&repository, "repository", "myrepo", "GIT repository target name")
 	flag.StringVar(&head, "head", "main", "GIT repository target name")
+	flag.StringVar(&configFile, "config", "crzy.yaml", "configuration file")
 	flag.BoolVar(&server, "server", false, "run as a server")
 	flag.BoolVar(&v, "version", false, "display the version")
 	flag.BoolVar(&colorize, "color", false, "colorize logs")
@@ -75,4 +93,16 @@ func usage(version, commit, date, builtBy string) {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+}
+
+func getConfig() {
+	// TODO : Si la variable configFile est != vide lire le fichier sinon lire crzy.yaml
+	// Si le fichier existe le unMarshal avec yaml dans une struct et afficher la valeur du paramètre repository
+	//fmt.Println(configFile)
+
+	data := config{}
+	yamlFile, _ := ioutil.ReadFile(configFile)
+	yaml.Unmarshal(yamlFile, &data)
+	fmt.Printf("repo : %s %d \n", data.Main.Repository, data.Main.ApiPort)
+
 }
