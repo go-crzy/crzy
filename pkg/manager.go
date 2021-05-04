@@ -14,17 +14,13 @@ import (
 )
 
 var (
-	repository = "myrepo"
-	head       = "master"
-	server     = false
-	colorize   = false
-	configFile = "crzy.yaml"
 	conf       = &config{}
 )
 
 type config struct {
 	sync.Mutex
 	Main struct {
+		Head       string
 		Server     bool
 		Color      bool
 		Repository string
@@ -36,13 +32,12 @@ type config struct {
 func Startup(version, commit, date, builtBy string) {
 	log := NewLogger("main")
 	usage(version, commit, date, builtBy)
-	getConfig()
 	heading()
 	startGroup := new(errgroup.Group)
 	endGroup := new(errgroup.Group)
 	upstream := NewUpstream()
 	machine := NewStateMachine(upstream)
-	git, err := NewGitServer(repository, head, upstream, machine.action)
+	git, err := NewGitServer(conf.Main.Repository, conf.Main.Head, upstream, machine.action)
 	if err != nil {
 		log.Error(err, "msg", "could nor initialize GIT server: %v")
 		return
@@ -78,6 +73,11 @@ func heading() {
 
 func usage(version, commit, date, builtBy string) {
 	v := false
+	configFile := ""
+	repository := "myrepo"
+	head       := "master"
+	server     := false
+	colorize   := false
 	flag.StringVar(&repository, "repository", "myrepo", "GIT repository target name")
 	flag.StringVar(&head, "head", "main", "GIT repository target name")
 	flag.StringVar(&configFile, "config", "crzy.yaml", "configuration file")
@@ -85,6 +85,19 @@ func usage(version, commit, date, builtBy string) {
 	flag.BoolVar(&v, "version", false, "display the version")
 	flag.BoolVar(&colorize, "color", false, "colorize logs")
 	flag.Parse()
+	getConfig(configFile)
+	if repository != "myrepo" {
+		conf.Main.Repository = repository
+	}
+	if head != "main" { 
+		conf.Main.Head = head
+	}
+	if colorize {
+		conf.Main.Color = colorize
+	}
+	if server {
+		conf.Main.Server = server
+	}
 	if v {
 		fmt.Printf("crzy version %s\n", version)
 		os.Exit(0)
@@ -95,14 +108,11 @@ func usage(version, commit, date, builtBy string) {
 	}
 }
 
-func getConfig() {
-	// TODO : Si la variable configFile est != vide lire le fichier sinon lire crzy.yaml
-	// Si le fichier existe le unMarshal avec yaml dans une struct et afficher la valeur du paramètre repository
-	//fmt.Println(configFile)
-
-	data := config{}
-	yamlFile, _ := ioutil.ReadFile(configFile)
-	yaml.Unmarshal(yamlFile, &data)
-	fmt.Printf("repo : %s %d \n", data.Main.Repository, data.Main.ApiPort)
-
+func getConfig(configFile string) {
+	yamlFile, err := ioutil.ReadFile(configFile)
+	if err != nil && configFile != "crzy.yaml" {
+		fmt.Printf("Can not access file %s \n", configFile)
+		os.Exit(1)
+	}
+	yaml.Unmarshal(yamlFile, &conf)
 }
