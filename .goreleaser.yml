@@ -8,19 +8,15 @@ builds:
     goos:
       - linux
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
     ldflags:
       - -s -w -X main.build={{.Version}} -X main.date={{.Date}} -X main.commit={{.ShortCommit}} -X main.builtBy=goreleaser
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - windows
-    goarch:
-      - amd64
-    ldflags:
-      - -s -w -X main.build={{.Version}} -X main.date={{.Date}} -X main.commit={{.ShortCommit}} -X main.builtBy=goreleaser
+    ignore:
+      - goos: windows
+        goarch: arm64
 archives:
   - replacements:
       386: i386
