@@ -93,7 +93,7 @@ func getConfig() {
 	//fmt.Println(configFile)
 
 	data := config{}
-	yamlFile, _ := ioutil.ReadFile("crzy.yaml")
+	yamlFile, _ := ioutil.ReadFile(configFile)
 	yaml.Unmarshal(yamlFile, &data)
 	fmt.Printf("repo : %s %d \n", data.Main.Repository, data.Main.ApiPort)
 
