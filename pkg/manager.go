@@ -16,17 +16,36 @@ import (
 var (
 	conf = &config{}
 )
-
 type config struct {
 	sync.Mutex
-	Main struct {
-		Head       string
-		Server     bool
-		Color      bool
-		Repository string
-		ApiPort    int `yaml:"api_port"`
-		ProxyPort  int `yaml:"proxy_port"`
-	}
+	Main    MainStruct
+	Version ExecStruct
+	Deployment DeploymentStruct
+}
+
+type MainStruct struct {
+	Head       string
+	Server     bool
+	Color      bool
+	Repository string
+	ApiPort    int `yaml:"api_port"`
+	ProxyPort  int `yaml:"proxy_port"`
+}
+
+type DeploymentStruct struct {
+	Artifact ArtifactStruct
+	Build ExecStruct
+}
+
+type ArtifactStruct struct {
+	Type string
+	Pattern string
+}
+
+type ExecStruct struct {
+	Command string
+	Args []string
+	Directory string
 }
 
 func Startup(version, commit, date, builtBy string) {
