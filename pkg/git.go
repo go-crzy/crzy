@@ -174,7 +174,12 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "tests fail")
 			return
 		}
-		output, err = execCmd(g.workspace, "git", "log", "-1", "--format=%H", ".")
+		workspace, err := filepath.Abs(path.Join(g.gitRootPath, conf.Version.Directory))
+		if err != nil {
+			log.Error(err, "Could not build path")
+			return
+		}
+		output, err = execCmd(workspace, conf.Version.Command, conf.Version.Args...)
 		if err != nil {
 			log.Error(err, "could not get SHA")
 			return
