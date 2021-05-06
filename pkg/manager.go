@@ -19,7 +19,7 @@ var (
 type config struct {
 	sync.Mutex
 	Main    MainStruct
-	Version VersionStruct
+	Version ExecStruct
 	Deployment DeploymentStruct
 }
 
@@ -32,14 +32,9 @@ type MainStruct struct {
 	ProxyPort  int `yaml:"proxy_port"`
 }
 
-type VersionStruct struct {
-	Command string
-	Args []string
-}
-
 type DeploymentStruct struct {
 	Artifact ArtifactStruct
-	Build BuildStruct
+	Build ExecStruct
 }
 
 type ArtifactStruct struct {
@@ -47,7 +42,7 @@ type ArtifactStruct struct {
 	Pattern string
 }
 
-type BuildStruct struct {
+type ExecStruct struct {
 	Command string
 	Args []string
 	Directory string
