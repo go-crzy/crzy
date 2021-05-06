@@ -26,10 +26,15 @@ type MainStruct struct {
 	ProxyPort  int `yaml:"proxy_port"`
 }
 
+type VersionStruct struct {
+	Command string
+	Args []string
+}
+
 type config struct {
 	sync.Mutex
 	Main    MainStruct
-	Maliste []string
+	Version VersionStruct
 }
 
 func Startup(version, commit, date, builtBy string) {

@@ -17,11 +17,6 @@ main:
   api_port: 8080
   proxy_port: 8081
 
-# Exemple de liste
-maliste:
-- value1
-- value2
-
 # utilisé à la ligne 177 du fichier git.go
 version:
   command: git
@@ -54,8 +49,14 @@ deployment:
 	if c.Main.Repository != "color.git" {
 		t.Error("error repository should be color.git; it is", c.Main.Repository)
 	}
-	for _, v := range c.Maliste {
+  
+	//  go test -v -run Test_ConfigUnmarshal
+
+  if c.Version.Args[0] != "log" {
+		t.Error("error repository should be log; it is", c.Version.Args)
+	}
+
+  for _, v := range c.Version.Args {
 		fmt.Println(v)
 	}
-	//  go test -v -run Test_ConfigUnmarshal
 }
