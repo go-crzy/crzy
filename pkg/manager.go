@@ -142,10 +142,7 @@ func getConfig(configFile string) {
 func setDefaultConf() {
 	if conf.Version.Command == "" {
 		conf.Version.Command = "git"
-		conf.Version.Args[0] = "log"
-		conf.Version.Args[1] = "-1"
-		conf.Version.Args[2] =  "--format=%H"
-		conf.Version.Args[3] = "."
+		conf.Version.Args = []string{"log","-1","--format=%H","."}
 		conf.Version.Directory = "."
 	}
 }

@@ -174,30 +174,30 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "tests fail")
 			return
 		}
-		workspace, err := filepath.Abs(path.Join(g.gitRootPath, conf.Version.Directory))
+		workspace, err := filepath.Abs(path.Join(g.workspace, conf.Version.Directory))
 		if err != nil {
 			log.Error(err, "Could not build path")
 			return
 		}
 		output, err = execCmd(workspace, conf.Version.Command, conf.Version.Args...)
 		if err != nil {
-			log.Error(err, "could not get SHA")
+			log.Error(err, "could not get version")
 			return
 		}
 		re := regexp.MustCompile(`([0-9a-f]*)`)
 		match := re.FindStringSubmatch(string(output))
-		if len(match) < 2 || len(match[1]) != 40 {
-			log.Error(errors.New("wrongsha"), string(output))
+		if len(match) < 2 {
+			log.Error(errors.New("wrongversion"), string(output))
 			return
 		}
-		sha := match[1][0:16]
+		version := match[1]
 		artipath := path.Join(g.gitRootPath, artifacts)
 		if err := os.Mkdir(artipath, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
 			log.Error(err, "artipath directory creation failed", "data", artipath)
 			return
 		}
-		artifact := fmt.Sprintf("%s/%s-%s%s", artipath, repo, sha, extension)
-		exe := fmt.Sprintf("%s-%s%s", repo, sha, extension)
+		artifact := fmt.Sprintf("%s/%s-%s%s", artipath, repo, version, extension)
+		exe := fmt.Sprintf("%s-%s%s", repo, version, extension)
 		output, err = execCmd(g.workspace, "go", "build", "-o", artifact, ".")
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Info(v)
