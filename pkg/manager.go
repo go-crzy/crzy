@@ -17,16 +17,19 @@ var (
 	conf = &config{}
 )
 
+type MainStruct struct {
+	Head       string
+	Server     bool
+	Color      bool
+	Repository string
+	ApiPort    int `yaml:"api_port"`
+	ProxyPort  int `yaml:"proxy_port"`
+}
+
 type config struct {
 	sync.Mutex
-	Main struct {
-		Head       string
-		Server     bool
-		Color      bool
-		Repository string
-		ApiPort    int `yaml:"api_port"`
-		ProxyPort  int `yaml:"proxy_port"`
-	}
+	Main    MainStruct
+	Maliste []string
 }
 
 func Startup(version, commit, date, builtBy string) {
