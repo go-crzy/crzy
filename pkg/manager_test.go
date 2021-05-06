@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"fmt"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -49,14 +48,13 @@ deployment:
 	if c.Main.Repository != "color.git" {
 		t.Error("error repository should be color.git; it is", c.Main.Repository)
 	}
-  
-	//  go test -v -run Test_ConfigUnmarshal
 
-  if c.Version.Args[0] != "log" {
+	if c.Version.Args[0] != "log" {
 		t.Error("error repository should be log; it is", c.Version.Args)
 	}
 
-  for _, v := range c.Version.Args {
-		fmt.Println(v)
+	if c.Deployment.Artifact.Pattern != "go-${version}" {
+		t.Error("error repository should be go-${version}; it is", c.Version.Args)
 	}
+
 }

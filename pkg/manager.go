@@ -16,6 +16,12 @@ import (
 var (
 	conf = &config{}
 )
+type config struct {
+	sync.Mutex
+	Main    MainStruct
+	Version VersionStruct
+	Deployment DeploymentStruct
+}
 
 type MainStruct struct {
 	Head       string
@@ -31,10 +37,20 @@ type VersionStruct struct {
 	Args []string
 }
 
-type config struct {
-	sync.Mutex
-	Main    MainStruct
-	Version VersionStruct
+type DeploymentStruct struct {
+	Artifact ArtifactStruct
+	Build BuildStruct
+}
+
+type ArtifactStruct struct {
+	Type string
+	Pattern string
+}
+
+type BuildStruct struct {
+	Command string
+	Args []string
+	Directory string
 }
 
 func Startup(version, commit, date, builtBy string) {
