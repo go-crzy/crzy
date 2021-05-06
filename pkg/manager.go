@@ -16,10 +16,11 @@ import (
 var (
 	conf = &config{}
 )
+
 type config struct {
 	sync.Mutex
-	Main    MainStruct
-	Version ExecStruct
+	Main       MainStruct
+	Version    ExecStruct
 	Deployment DeploymentStruct
 }
 
@@ -34,17 +35,17 @@ type MainStruct struct {
 
 type DeploymentStruct struct {
 	Artifact ArtifactStruct
-	Build ExecStruct
+	Build    ExecStruct
 }
 
 type ArtifactStruct struct {
-	Type string
+	Type    string
 	Pattern string
 }
 
 type ExecStruct struct {
-	Command string
-	Args []string
+	Command   string
+	Args      []string
 	Directory string
 }
 
@@ -130,8 +131,18 @@ func usage(version, commit, date, builtBy string) {
 func getConfig(configFile string) {
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil && configFile != "crzy.yaml" {
+		setDefaultConf()
 		fmt.Printf("Can not access file %s \n", configFile)
 		os.Exit(1)
 	}
 	yaml.Unmarshal(yamlFile, &conf)
+	setDefaultConf()
+}
+
+func setDefaultConf() {
+	if conf.Version.Command == "" {
+		conf.Version.Command = "git"
+		conf.Version.Args = []string{"log","-1","--format=%H","."}
+		conf.Version.Directory = "."
+	}
 }
