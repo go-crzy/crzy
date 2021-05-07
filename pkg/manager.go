@@ -161,7 +161,6 @@ func setDefaultConf() {
 		conf.Deployment.Build.Directory = "."
 	}
 
-	// Mettre les valeurs pas défaut du test
 	if conf.Deployment.Test.Command == "" {
 		conf.Deployment.Test.Command = "go"
 		conf.Deployment.Test.Args = []string{"test", "./..."}

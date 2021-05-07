@@ -171,7 +171,7 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "Could not build path")
 			return
 		}
-		output, err = execCmd(workspace, conf.Deployment.Test.Command, conf.Deployment.Test.Args...) // Faire la même chose que pour version
+		output, err = execCmd(workspace, conf.Deployment.Test.Command, conf.Deployment.Test.Args...) 
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Info(v)
 		}
