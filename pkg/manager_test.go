@@ -65,6 +65,10 @@ deployment:
 		t.Error("error repository should be go-${version}; it is", c.Version.Args)
 	}
 
+  if c.Deployment.Test.Command != "go" {
+    t.Error("error command should be go")
+  }
+
 }
 
 func Test_RegExp(t *testing.T) {

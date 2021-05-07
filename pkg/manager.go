@@ -36,7 +36,7 @@ type MainStruct struct {
 type DeploymentStruct struct {
 	Artifact ArtifactStruct
 	Build    ExecStruct
-	// Ajouter Test TestStruct
+	Test     TestStruct
 }
 
 type ArtifactStruct struct {
@@ -45,6 +45,12 @@ type ArtifactStruct struct {
 }
 
 type ExecStruct struct {
+	Command   string
+	Args      []string
+	Directory string
+}
+
+type TestStruct struct {
 	Command   string
 	Args      []string
 	Directory string
@@ -154,5 +160,11 @@ func setDefaultConf() {
 		conf.Deployment.Build.Args = []string{"build", "-o", "${artifact}", "."}
 		conf.Deployment.Build.Directory = "."
 	}
+
 	// Mettre les valeurs pas défaut du test
+	if conf.Deployment.Test.Command == "" {
+		conf.Deployment.Test.Command = "go"
+		conf.Deployment.Test.Args = []string{"test", "./..."}
+		conf.Deployment.Test.Directory = "."
+	}
 }
