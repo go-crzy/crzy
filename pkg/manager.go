@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -154,6 +155,9 @@ func setDefaultConf() {
 	}
 	if conf.Deployment.Artifact.Pattern == "" {
 		conf.Deployment.Artifact.Pattern = "go-${version}"
+		if runtime.GOOS == "windows" {
+			conf.Deployment.Artifact.Pattern = "go-${version}.exe"
+		}
 	}
 	if conf.Deployment.Build.Command == "" {
 		conf.Deployment.Build.Command = "go"
