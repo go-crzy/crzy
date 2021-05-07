@@ -166,7 +166,12 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "could not run git pull,", "data", string(output))
 			return
 		}
-		output, err = execCmd(g.workspace, "go", "test", "-v", "./...")
+		workspace, err := filepath.Abs(path.Join(g.workspace, conf.Deployment.Test.Directory))
+		if err != nil {
+			log.Error(err, "Could not build path")
+			return
+		}
+		output, err = execCmd(workspace, conf.Deployment.Test.Command, conf.Deployment.Test.Args...) 
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Info(v)
 		}
@@ -174,7 +179,7 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "tests fail")
 			return
 		}
-		workspace, err := filepath.Abs(path.Join(g.workspace, conf.Version.Directory))
+		workspace, err = filepath.Abs(path.Join(g.workspace, conf.Version.Directory))
 		if err != nil {
 			log.Error(err, "Could not build path")
 			return
@@ -196,12 +201,22 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "artipath directory creation failed", "data", artipath)
 			return
 		}
+		// L199 Met dans exe la valeur de conf.artifact.pattern en substituant ${version} par la version calculer à la ligne 193
+		// L200 Met dans artifact comme fait à la ligne 194, artifact et exe
 		artifact := fmt.Sprintf("%s/%s-%s%s", artipath, repo, version, extension)
 		exe := fmt.Sprintf("%s-%s%s", repo, version, extension)
+		// L203 Boucle sur tout les args de conf.Deployment.Build.Args et remplace ${artifact} par le contenu de artifact qui est calculer juste avant
+		// L204 Replace this with conf build command properties comme à la ligne 182 pour le version
 		output, err = execCmd(g.workspace, "go", "build", "-o", artifact, ".")
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Info(v)
 		}
+		// L209 A la ligne 193 on suppose que version = "123"
+		// L210 En utilisant les valeurs par défaut conf.Artifact.Pattern == "go-${version}"
+		// L211 conf.Deployment.Build.Args == []string("build", "-o","${artifact}", ".")
+		// L212 199 : Créer exe = go-123
+		// L213 200 : Crée artifact = "\tmp\exe\go-123"
+		// L214 203 : Args = []string("build", "-o","\tmp\exe\go-123", ".")
 		if err != nil {
 			log.Error(err, "build fail")
 			return

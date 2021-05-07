@@ -36,6 +36,7 @@ type MainStruct struct {
 type DeploymentStruct struct {
 	Artifact ArtifactStruct
 	Build    ExecStruct
+	Test     TestStruct
 }
 
 type ArtifactStruct struct {
@@ -44,6 +45,12 @@ type ArtifactStruct struct {
 }
 
 type ExecStruct struct {
+	Command   string
+	Args      []string
+	Directory string
+}
+
+type TestStruct struct {
 	Command   string
 	Args      []string
 	Directory string
@@ -142,7 +149,21 @@ func getConfig(configFile string) {
 func setDefaultConf() {
 	if conf.Version.Command == "" {
 		conf.Version.Command = "git"
-		conf.Version.Args = []string{"log","-1","--format=%H","."}
+		conf.Version.Args = []string{"log", "-1", "--format=%H", "."}
 		conf.Version.Directory = "."
+	}
+	if conf.Deployment.Artifact.Pattern == "" {
+		conf.Deployment.Artifact.Pattern = "go-${version}"
+	}
+	if conf.Deployment.Build.Command == "" {
+		conf.Deployment.Build.Command = "go"
+		conf.Deployment.Build.Args = []string{"build", "-o", "${artifact}", "."}
+		conf.Deployment.Build.Directory = "."
+	}
+
+	if conf.Deployment.Test.Command == "" {
+		conf.Deployment.Test.Command = "go"
+		conf.Deployment.Test.Args = []string{"test", "./..."}
+		conf.Deployment.Test.Directory = "."
 	}
 }
