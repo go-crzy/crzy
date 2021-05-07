@@ -166,7 +166,7 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "could not run git pull,", "data", string(output))
 			return
 		}
-		output, err = execCmd(g.workspace, "go", "test", "-v", "./...")
+		output, err = execCmd(g.workspace, "go", "test", "-v", "./...") // Faire la même chose que pour version
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Info(v)
 		}
@@ -196,12 +196,22 @@ func (g *GitServer) Update(repo string) {
 			log.Error(err, "artipath directory creation failed", "data", artipath)
 			return
 		}
+		// Met dans exe la valeur de conf.artifact.pattern en substituant ${version} par la version calculer à la ligne 193
+		// Met dans artifact comme fait à la ligne 194, artifact et exe
 		artifact := fmt.Sprintf("%s/%s-%s%s", artipath, repo, version, extension)
 		exe := fmt.Sprintf("%s-%s%s", repo, version, extension)
+		// Boucle sur tout les args de conf.Deployment.Build.Args et remplace ${artifact} par le contenu de artifact qui est calculer juste avant
+		// Replace this with conf build command properties comme à la ligne 182 pour le version
 		output, err = execCmd(g.workspace, "go", "build", "-o", artifact, ".")
 		for _, v := range strings.Split(string(output), "\n") {
 			log.Info(v)
 		}
+		// A la ligne 193 on suppose que version = "123"
+		// En utilisant les valeurs par défaut conf.Artifact.Pattern == "go-${version}"
+		// conf.Deployment.Build.Args == []string("build", "-o","${artifact}", ".")
+		// 199 : Créer exe = go-123
+		// 200 : Crée artifact = "\tmp\exe\go-123"
+		// 203 : Args = []string("build", "-o","\tmp\exe\go-123", ".")
 		if err != nil {
 			log.Error(err, "build fail")
 			return

@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"regexp"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -39,6 +40,13 @@ deployment:
     - ${artifact}
     - "."
     directory: "."
+  # ajoute les tests
+  test:
+    command: go
+    args: 
+    - test
+    - "./..."
+    directory: "."
 `
 	c := config{}
 	err := yaml.Unmarshal([]byte(fileContent), &c)
@@ -57,4 +65,14 @@ deployment:
 		t.Error("error repository should be go-${version}; it is", c.Version.Args)
 	}
 
+}
+
+func Test_RegExp(t *testing.T) {
+	val := `abc-${version}-`
+	version := "123"
+	re := regexp.MustCompile(`(\$\{version\})`)
+	s := re.ReplaceAllString(val, version)
+	if s != "abc-123-" {
+		t.Error("Return should be abc-123-")
+	}
 }
