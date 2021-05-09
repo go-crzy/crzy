@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// Test_defaultConf_and_succeed checks we manage to test the project
 func Test_defaultConf_and_succeed(t *testing.T) {
 	d := &config{
 		Main: MainStruct{
@@ -52,7 +51,6 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 	}
 }
 
-// Test_defaultConf_and_fail checks do not manage java
 func Test_defaultConf_and_fail(t *testing.T) {
 	_, err := defaultConf("java")
 	if err != ErrUnsupportedLang {
