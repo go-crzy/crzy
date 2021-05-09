@@ -2,7 +2,7 @@ main:
   head: main
   server: true
   color: true
-  repository: color.git
+  repository: myrepo
   api_port: 8080
   proxy_port: 8081
 
