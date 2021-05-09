@@ -1,82 +1,61 @@
 package pkg
 
 import (
-	"regexp"
+	"embed"
+	"reflect"
 	"testing"
 
 	"gopkg.in/yaml.v3"
 )
 
-func Test_ConfigUnmarshal(t *testing.T) {
-	fileContent := `
-main:
-  head: main
-  server: true
-  color: true
-  repository: color.git
-  api_port: 8080
-  proxy_port: 8081
+//go:embed templates/*
+var langTemplate embed.FS
 
-# utilisé à la ligne 177 du fichier git.go
-version:
-  command: git
-  args:
-  - log
-  - "-1"
-  - "--format=%H"
-  - "."
-  directory: "."
-  
-deployment:
-  artifact:
-    type: executable
-    pattern: go-${version}
-  # utilisé à la ligne 196 du fichier git.go
-  build:
-    command: go
-    args:
-    - build
-    - "-o"
-    - ${artifact}
-    - "."
-    directory: "."
-  # ajoute les tests
-  test:
-    command: go
-    args: 
-    - test
-    - "./..."
-    directory: "."
-`
+// Test_Template_golang checks the template matches the default Golang Model
+// as it is expected to work
+func Test_Template_golang(t *testing.T) {
 	c := config{}
-	err := yaml.Unmarshal([]byte(fileContent), &c)
+	golang, err := langTemplate.ReadFile("templates/golang.yaml")
 	if err != nil {
-		t.Error(err, "error unmarshalling file")
+		t.Error(err, "error reading file")
 	}
-	if c.Main.Repository != "color.git" {
-		t.Error("error repository should be color.git; it is", c.Main.Repository)
+	err = yaml.Unmarshal(golang, &c)
+	if err != nil {
+		t.Error(err, "error Unmarshalling file")
 	}
-
-	if c.Version.Args[0] != "log" {
-		t.Error("error repository should be log; it is", c.Version.Args)
+	d := config{
+		Main: MainStruct{
+			Head:       "main",
+			Server:     true,
+			Color:      true,
+			Repository: "color.git",
+			ApiPort:    8080,
+			ProxyPort:  8081,
+		},
+		Version: ExecStruct{
+			Command:   "git",
+			Args:      []string{"log", "-1", "--format=%H", "."},
+			Directory: ".",
+		},
+		Deployment: DeploymentStruct{
+			Artifact: ArtifactStruct{
+				Type:    "executable",
+				Pattern: `go-${version}`,
+			},
+			Build: ExecStruct{
+				Command:   "go",
+				Args:      []string{"build", "-o", `${artifact}`, "."},
+				Directory: ".",
+			},
+			Test: TestStruct{
+				Command:   "go",
+				Args:      []string{"test", "./..."},
+				Directory: ".",
+			},
+		},
 	}
-
-	if c.Deployment.Artifact.Pattern != "go-${version}" {
-		t.Error("error repository should be go-${version}; it is", c.Version.Args)
-	}
-
-  if c.Deployment.Test.Command != "go" {
-    t.Error("error command should be go")
-  }
-
-}
-
-func Test_RegExp(t *testing.T) {
-	val := `abc-${version}-`
-	version := "123"
-	re := regexp.MustCompile(`(\$\{version\})`)
-	s := re.ReplaceAllString(val, version)
-	if s != "abc-123-" {
-		t.Error("Return should be abc-123-")
+	if !reflect.DeepEqual(c, d) {
+		t.Error("Parsed and original values do not match")
+		t.Error("get", string(golang))
 	}
 }
