@@ -103,7 +103,7 @@ func NewGitServer(
 		log:         log,
 	}
 
-	g.ghx = g.Updater(Logging(NewLogger("updater"), ghx))
+	g.ghx = g.Updater(LoggingMiddleware(NewLogger("updater"), ghx))
 	return g, nil
 
 }

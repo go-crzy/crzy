@@ -24,16 +24,26 @@ func Startup(version, commit, date, builtBy string) {
 	machine := NewStateMachine(upstream)
 	git, err := NewGitServer(conf.Main.Repository, conf.Main.Head, upstream, machine.action)
 	if err != nil {
-		log.Error(err, "msg", "could nor initialize GIT server: %v")
+		log.Error(err, "msg", "could nor initialize GIT server")
 		return
 	}
 	log.Info("temporary directory", "payload", git.absRepoPath)
 	proxy := NewReverseProxy(upstream)
+	listener1, err := NewHTTPListener(":8080")
+	if err != nil {
+		log.Error(err, "msg", "could not start the GIT listener")
+		return
+	}
+	listener2, err := NewHTTPListener(":8081")
+	if err != nil {
+		log.Error(err, "msg", "could not start the proxy listener")
+		return
+	}
 	startContext, startCancel := context.WithCancel(context.Background())
 	endContext, endCancel := context.WithCancel(context.Background())
 	startGroup.Go(func() error { return NewSignalHandler().Run(startContext, startCancel) })
-	startGroup.Go(func() error { return NewHTTPListener().Run(startContext, ":8080", git.ghx) })
-	startGroup.Go(func() error { return NewHTTPListener().Run(startContext, ":8081", proxy) })
+	startGroup.Go(func() error { return listener1.Run(startContext, git.ghx) })
+	startGroup.Go(func() error { return listener2.Run(startContext, proxy) })
 	startGroup.Go(func() error { return NewCronService().Run(startContext) })
 	endGroup.Go(func() error { return NewStoreService(git.gitRootPath).Run(endContext) })
 	startGroup.Go(func() error { return machine.Run(startContext) })

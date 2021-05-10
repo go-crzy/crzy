@@ -13,44 +13,45 @@ import (
 type HTTPListener struct {
 	errc chan error
 	log  logr.Logger
+	lsnr net.Listener
 }
 
-func NewHTTPListener() *HTTPListener {
+func NewHTTPListener(addr string) (*HTTPListener, error) {
+	lsnr, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
 	return &HTTPListener{
 		errc: make(chan error),
 		log:  NewLogger("http"),
-	}
+		lsnr: lsnr,
+	}, nil
 }
 
-func (l *HTTPListener) Run(ctx context.Context, addr string, handler http.Handler) error {
+func (l *HTTPListener) Run(ctx context.Context, handler http.Handler) error {
 	log := l.log
-	log.Info("starting HTTP listener", "data", addr)
-	lsnr, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Error(err, "failed to start HTTP listener", "data", addr)
-		return err
-	}
-	defer lsnr.Close()
-	go func() {
+	log.Info("starting HTTP listener", "data", l.lsnr.Addr().String())
+	go func(lsnr net.Listener) {
 		l.errc <- http.Serve(lsnr, handler)
-	}()
+	}(l.lsnr)
+	defer l.lsnr.Close()
 	for {
 		select {
 		case err := <-l.errc:
 			if err != nil {
-				log.Error(err, "HTTP listener failed", "data", addr)
+				log.Error(err, "HTTP listener failed", "data", l.lsnr.Addr().String())
 				return err
 			}
-			log.Info("HTTP listener stopped", "data", addr)
+			log.Info("HTTP listener stopped", "data", l.lsnr.Addr().String())
 			return nil
 		case <-ctx.Done():
-			log.Info("stopping HTTP listener", "data", addr)
+			log.Info("stopping HTTP listener", "data", l.lsnr.Addr().String())
 			return ctx.Err()
 		}
 	}
 }
 
-func Logging(log logr.Logger, next http.Handler) http.Handler {
+func LoggingMiddleware(log logr.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t1 := time.Now()
 		next.ServeHTTP(w, r)

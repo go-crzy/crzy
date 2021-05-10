@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/fatih/color"
@@ -12,6 +14,7 @@ func NewLogger(name string) logr.Logger {
 	return &crzyLogger{
 		name:          name,
 		keysAndValues: map[string]string{},
+		out:           os.Stdout,
 	}
 }
 
@@ -19,6 +22,7 @@ type crzyLogger struct {
 	name          string
 	keysAndValues map[string]string
 	level         int
+	out           io.Writer
 }
 
 func (c *crzyLogger) Enabled() bool {
@@ -118,36 +122,28 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 		}
 		log += fmt.Sprintf(" [%s]", data[0:n])
 	}
-	colorPrint(c.name, log)
+	c.colorPrint(c.name, log)
 }
 
-func colorPrint(name, log string) {
-	if conf.Main.Color {
-		fgColor := color.FgRed
-		switch name {
-		case "":
-			fgColor = color.FgYellow
-		case "machine":
-			fgColor = color.FgBlue
-		case "store":
-			fgColor = color.FgCyan
-		case "http":
-			fgColor = color.FgRed
-		case "main":
-			fgColor = color.FgGreen
-		case "git":
-			fgColor = color.FgHiYellow
-		case "updater":
-			fgColor = color.FgHiBlue
-		case "signal":
-			fgColor = color.FgHiRed
-		case "cron":
-			fgColor = color.FgHiGreen
-		default:
-			fgColor = color.FgMagenta
-		}
-		color.Set(fgColor)
-		defer color.Unset()
+func (c *crzyLogger) colorPrint(name, log string) {
+	if !conf.Main.Color {
+		fmt.Fprintln(c.out, log)
+		return
 	}
-	fmt.Println(log)
+	colorMap := map[string]color.Attribute{
+		"":        color.FgYellow,
+		"machine": color.FgBlue,
+		"store":   color.FgCyan,
+		"http":    color.FgRed,
+		"main":    color.FgGreen,
+		"git":     color.FgHiYellow,
+		"updater": color.FgHiBlue,
+		"signal":  color.FgHiRed,
+		"cron":    color.FgHiGreen,
+	}
+	foreground, ok := colorMap[name]
+	if !ok {
+		foreground = color.FgMagenta
+	}
+	color.New(foreground).Fprintln(c.out, log)
 }
