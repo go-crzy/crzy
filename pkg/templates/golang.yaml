@@ -1,0 +1,35 @@
+main:
+  head: main
+  server: true
+  color: true
+  repository: myrepo
+  api_port: 8080
+  proxy_port: 8081
+
+version:
+  command: git
+  args:
+  - log
+  - "-1"
+  - "--format=%H"
+  - "."
+  directory: "."
+  
+deployment:
+  artifact:
+    type: executable
+    pattern: go-${version}
+  build:
+    command: go
+    args:
+    - build
+    - "-o"
+    - ${artifact}
+    - "."
+    directory: "."
+  test:
+    command: go
+    args: 
+    - test
+    - "./..."
+    directory: "."

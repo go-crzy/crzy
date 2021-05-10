@@ -5,57 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"runtime"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
-	"gopkg.in/yaml.v3"
 )
 
 var (
 	conf = &config{}
 )
-
-type config struct {
-	sync.Mutex
-	Main       MainStruct
-	Version    ExecStruct
-	Deployment DeploymentStruct
-}
-
-type MainStruct struct {
-	Head       string
-	Server     bool
-	Color      bool
-	Repository string
-	ApiPort    int `yaml:"api_port"`
-	ProxyPort  int `yaml:"proxy_port"`
-}
-
-type DeploymentStruct struct {
-	Artifact ArtifactStruct
-	Build    ExecStruct
-	Test     TestStruct
-}
-
-type ArtifactStruct struct {
-	Type    string
-	Pattern string
-}
-
-type ExecStruct struct {
-	Command   string
-	Args      []string
-	Directory string
-}
-
-type TestStruct struct {
-	Command   string
-	Args      []string
-	Directory string
-}
 
 func Startup(version, commit, date, builtBy string) {
 	log := NewLogger("main")
@@ -67,16 +24,26 @@ func Startup(version, commit, date, builtBy string) {
 	machine := NewStateMachine(upstream)
 	git, err := NewGitServer(conf.Main.Repository, conf.Main.Head, upstream, machine.action)
 	if err != nil {
-		log.Error(err, "msg", "could nor initialize GIT server: %v")
+		log.Error(err, "msg", "could nor initialize GIT server")
 		return
 	}
 	log.Info("temporary directory", "payload", git.absRepoPath)
 	proxy := NewReverseProxy(upstream)
+	listener1, err := NewHTTPListener(":8080")
+	if err != nil {
+		log.Error(err, "msg", "could not start the GIT listener")
+		return
+	}
+	listener2, err := NewHTTPListener(":8081")
+	if err != nil {
+		log.Error(err, "msg", "could not start the proxy listener")
+		return
+	}
 	startContext, startCancel := context.WithCancel(context.Background())
 	endContext, endCancel := context.WithCancel(context.Background())
 	startGroup.Go(func() error { return NewSignalHandler().Run(startContext, startCancel) })
-	startGroup.Go(func() error { return NewHTTPListener().Run(startContext, ":8080", git.ghx) })
-	startGroup.Go(func() error { return NewHTTPListener().Run(startContext, ":8081", proxy) })
+	startGroup.Go(func() error { return listener1.Run(startContext, git.ghx) })
+	startGroup.Go(func() error { return listener2.Run(startContext, proxy) })
 	startGroup.Go(func() error { return NewCronService().Run(startContext) })
 	endGroup.Go(func() error { return NewStoreService(git.gitRootPath).Run(endContext) })
 	startGroup.Go(func() error { return machine.Run(startContext) })
@@ -101,7 +68,7 @@ func heading() {
 
 func usage(version, commit, date, builtBy string) {
 	configFile := ""
-	flag.StringVar(&configFile, "config", "crzy.yaml", "configuration file")
+	flag.StringVar(&configFile, "config", defaultConfigFile, "configuration file")
 	repository := ""
 	head := ""
 	server := false
@@ -117,7 +84,12 @@ func usage(version, commit, date, builtBy string) {
 		fmt.Printf("crzy version %s\n", version)
 		os.Exit(0)
 	}
-	getConfig(configFile)
+	var err error
+	conf, err = getConfig(defaultLanguage, configFile)
+	if err != nil {
+		fmt.Printf("could not read file %s\n", configFile)
+		os.Exit(1)
+	}
 	if repository != "myrepo" || conf.Main.Repository == "" {
 		conf.Main.Repository = repository
 	}
@@ -133,41 +105,5 @@ func usage(version, commit, date, builtBy string) {
 	if !conf.Main.Server {
 		flag.PrintDefaults()
 		os.Exit(1)
-	}
-}
-
-func getConfig(configFile string) {
-	yamlFile, err := ioutil.ReadFile(configFile)
-	if err != nil && configFile != "crzy.yaml" {
-		setDefaultConf()
-		fmt.Printf("Can not access file %s \n", configFile)
-		os.Exit(1)
-	}
-	yaml.Unmarshal(yamlFile, &conf)
-	setDefaultConf()
-}
-
-func setDefaultConf() {
-	if conf.Version.Command == "" {
-		conf.Version.Command = "git"
-		conf.Version.Args = []string{"log", "-1", "--format=%H", "."}
-		conf.Version.Directory = "."
-	}
-	if conf.Deployment.Artifact.Pattern == "" {
-		conf.Deployment.Artifact.Pattern = "go-${version}"
-		if runtime.GOOS == "windows" {
-			conf.Deployment.Artifact.Pattern = "go-${version}.exe"
-		}
-	}
-	if conf.Deployment.Build.Command == "" {
-		conf.Deployment.Build.Command = "go"
-		conf.Deployment.Build.Args = []string{"build", "-o", "${artifact}", "."}
-		conf.Deployment.Build.Directory = "."
-	}
-
-	if conf.Deployment.Test.Command == "" {
-		conf.Deployment.Test.Command = "go"
-		conf.Deployment.Test.Args = []string{"test", "./..."}
-		conf.Deployment.Test.Directory = "."
 	}
 }
