@@ -29,6 +29,8 @@ type config struct {
 	Main       MainStruct
 	Version    ExecStruct
 	Deployment DeploymentStruct
+	Release    ReleaseStruct
+	Notifier   NotifierStruct
 }
 
 type MainStruct struct {
@@ -44,6 +46,7 @@ type DeploymentStruct struct {
 	Artifact ArtifactStruct
 	Build    ExecStruct
 	Test     ExecStruct
+	Run      ExecStruct
 }
 
 type ArtifactStruct struct {
@@ -55,6 +58,17 @@ type ExecStruct struct {
 	Command   string
 	Args      []string
 	Directory string
+}
+
+type ReleaseStruct struct {
+	Keep     int
+	Model    string
+	Accessor AccessorStruct
+}
+
+type AccessorStruct struct {
+	Type string
+	Name string
 }
 
 func getConfig(lang string, configFile string) (*config, error) {

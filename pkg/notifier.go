@@ -6,10 +6,6 @@ import (
 	"github.com/slack-go/slack"
 )
 
-type notifierTest struct {
-	Notifier NotifierStruct
-}
-
 type NotifierStruct struct {
 	Slack SlackStruct
 }
