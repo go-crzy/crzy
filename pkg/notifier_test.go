@@ -7,6 +7,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type notifierTest struct {
+	Notifier NotifierStruct
+}
+
 func Test_notifier(t *testing.T) {
 	token := os.Getenv("SLACK_TOKEN")
 	fileContent := `
