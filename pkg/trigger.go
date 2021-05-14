@@ -14,11 +14,12 @@ type triggerWorkflow struct {
 }
 
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan string, version chan<- string) error {
+	log := w.log.WithName("trigger")
 	for {
 		select {
 		case action := <-action:
 			msg := fmt.Sprintf("trigger %s started...", action)
-			w.log.Info(msg)
+			log.Info(msg)
 			version <- triggeredMessage
 		case <-ctx.Done():
 			return nil

@@ -10,7 +10,7 @@ import (
 
 func Test_ReleaseWorkflow(t *testing.T) {
 	release := &releaseWorkflow{
-		Log: &mockLogger{},
+		log: &mockLogger{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)

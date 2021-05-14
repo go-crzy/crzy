@@ -17,7 +17,7 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 	ctx, cancel := context.WithCancel(ctx)
 	deploy := &deployWorkflow{
 		deployStruct: r.Config.Deploy,
-		Log:          r.Log,
+		log:          r.Log,
 	}
 	trigger := &triggerWorkflow{
 		triggerStruct: r.Config.Trigger,
@@ -26,11 +26,12 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 	}
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
-		Log:           r.Log,
+		log:           r.Log,
 	}
 	version := &versionSync{
 		versionStruct: r.Config.Trigger.Version,
-		Log:           r.Log,
+		log:           r.Log,
+		command:       &MockVersionAndSyncSucceed{},
 	}
 	startVersion := make(chan string)
 	defer close(startVersion)

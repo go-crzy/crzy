@@ -9,15 +9,16 @@ import (
 
 type deployWorkflow struct {
 	deployStruct
-	Log logr.Logger
+	log logr.Logger
 }
 
 func (w *deployWorkflow) start(ctx context.Context, action <-chan string, release, version chan<- string) error {
+	log := w.log.WithName("deploy")
 	for {
 		select {
 		case action := <-action:
 			msg := fmt.Sprintf("action %s started...", action)
-			w.Log.Info(msg)
+			log.Info(msg)
 			release <- deployedMessage
 			version <- deployedMessage
 		case <-ctx.Done():

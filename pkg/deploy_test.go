@@ -9,7 +9,7 @@ import (
 
 func Test_DeployWorkflow(t *testing.T) {
 	deploy := &deployWorkflow{
-		Log: &mockLogger{},
+		log: &mockLogger{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)

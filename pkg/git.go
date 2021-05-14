@@ -110,13 +110,13 @@ func (r *runContainer) newGitServer(store store, action chan<- string) (*gitServ
 		return nil, err
 	}
 	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {
-		log.Info("prepare run service rpc upload.")
+		// log.Info("prepare run service rpc upload.")
 	})
 	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {
-		log.Info("prepare run service rpc receive.")
+		// log.Info("prepare run service rpc receive.")
 	})
 	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {
-		log.Info("after match routing.")
+		// log.Info("after match routing.")
 	})
 	if err := command.initRepository(); err != nil {
 		return nil, err

@@ -141,14 +141,14 @@ func (c *crzyLogger) colorPrint(name, log string) {
 	}
 	colorMap := map[string]color.Attribute{
 		"":        color.FgYellow,
-		"machine": color.FgBlue,
+		"release": color.FgBlue,
 		"store":   color.FgCyan,
 		"http":    color.FgRed,
 		"main":    color.FgGreen,
 		"git":     color.FgHiYellow,
-		"updater": color.FgHiBlue,
+		"deploy":  color.FgHiBlue,
 		"signal":  color.FgHiRed,
-		"cron":    color.FgHiGreen,
+		"trigger": color.FgHiGreen,
 	}
 	foreground, ok := colorMap[name]
 	if !ok {

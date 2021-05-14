@@ -10,7 +10,7 @@ import (
 
 func Test_VersionWorkflowWithSuccess(t *testing.T) {
 	version := &versionSync{
-		Log:     &mockLogger{},
+		log:     &mockLogger{},
 		command: &MockVersionAndSyncSucceed{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
@@ -39,7 +39,7 @@ func Test_VersionWorkflowWithSuccess(t *testing.T) {
 
 func Test_VersionWorkflowWithFailure(t *testing.T) {
 	version := &versionSync{
-		Log:     &mockLogger{},
+		log:     &mockLogger{},
 		command: &MockVersionAndSyncFailed{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
