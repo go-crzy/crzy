@@ -9,7 +9,8 @@ import (
 
 func Test_TriggerWorkflow(t *testing.T) {
 	trigger := &triggerWorkflow{
-		Log: &mockLogger{},
+		log: &mockLogger{},
+		git: &mockGitCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)

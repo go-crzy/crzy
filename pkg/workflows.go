@@ -12,23 +12,24 @@ const (
 	versionedMessage string = "versioned"
 )
 
-func (r *runContainer) createAndStartWorkflows(ctx context.Context, conf config, startTrigger <-chan string) error {
+func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger <-chan string) error {
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	deploy := &deployWorkflow{
-		deployStruct: conf.Deploy,
+		deployStruct: r.Config.Deploy,
 		Log:          r.Log,
 	}
 	trigger := &triggerWorkflow{
-		triggerStruct: conf.Trigger,
-		Log:           r.Log,
+		triggerStruct: r.Config.Trigger,
+		log:           r.Log,
+		git:           git,
 	}
 	release := &releaseWorkflow{
-		releaseStruct: conf.Release,
+		releaseStruct: r.Config.Release,
 		Log:           r.Log,
 	}
 	version := &versionSync{
-		versionStruct: conf.Trigger.Version,
+		versionStruct: r.Config.Trigger.Version,
 		Log:           r.Log,
 	}
 	startVersion := make(chan string)

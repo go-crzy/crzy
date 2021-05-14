@@ -9,7 +9,8 @@ import (
 
 type triggerWorkflow struct {
 	triggerStruct
-	Log logr.Logger
+	log logr.Logger
+	git gitCommand
 }
 
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan string, version chan<- string) error {
@@ -17,7 +18,7 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan string, versi
 		select {
 		case action := <-action:
 			msg := fmt.Sprintf("trigger %s started...", action)
-			w.Log.Info(msg)
+			w.log.Info(msg)
 			version <- triggeredMessage
 		case <-ctx.Done():
 			return nil

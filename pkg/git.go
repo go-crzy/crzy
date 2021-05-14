@@ -1,8 +1,6 @@
 package pkg
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -11,41 +9,78 @@ import (
 	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
 )
 
-var (
-	errRepositoryNotSync = errors.New("notsync")
-	errCommitNotFound    = errors.New("notfound")
-)
-
 func execCmd(dir string, name string, arg ...string) ([]byte, error) {
 	c := exec.Command(name, arg...)
 	c.Dir = dir
 	return c.CombinedOutput()
 }
 
-type gitCommand struct {
+type gitCommand interface {
+	initRepository() error
+	cloneRepository() error
+	getBin() string
+	getRepository() string
+}
+
+type defaultGitCommand struct {
 	bin   string
 	store store
 	log   logr.Logger
 }
 
-func (r *runContainer) newGitCommand(store store) (*gitCommand, error) {
+func (r *runContainer) newDefaultGitCommand(store store) (gitCommand, error) {
 	bin, err := exec.LookPath("git")
 	if err != nil {
 		r.Log.Info("git not found...")
 		return nil, err
 	}
-	return &gitCommand{
+	return &defaultGitCommand{
 		bin:   bin,
 		store: store,
 		log:   r.Log}, nil
 }
 
-func (git *gitCommand) initRepository() error {
+func (git *defaultGitCommand) initRepository() error {
 	if _, err := execCmd(git.store.repoDir, git.bin, "init", "--bare", "--shared"); err != nil {
 		git.log.Error(err, "could not initialize repository")
 		return err
 	}
 	return nil
+}
+
+func (git *defaultGitCommand) cloneRepository() error {
+	if _, err := execCmd(git.store.workdir, git.bin, "clome", git.store.repoDir, "."); err != nil {
+		git.log.Error(err, "could not clone repository")
+		return err
+	}
+	return nil
+}
+
+func (git *defaultGitCommand) getBin() string {
+	return git.bin
+}
+
+func (git *defaultGitCommand) getRepository() string {
+	return git.store.repoDir
+}
+
+type mockGitCommand struct {
+}
+
+func (git *mockGitCommand) initRepository() error {
+	return nil
+}
+
+func (git *mockGitCommand) cloneRepository() error {
+	return nil
+}
+
+func (git *mockGitCommand) getBin() string {
+	return "git"
+}
+
+func (git *mockGitCommand) getRepository() string {
+	return "/repository"
 }
 
 type gitServer struct {
@@ -59,17 +94,17 @@ type gitServer struct {
 
 func (r *runContainer) newGitServer(store store, action chan<- string) (*gitServer, error) {
 	log := r.Log.WithName("git")
-	command, err := r.newGitCommand(store)
+	command, err := r.newDefaultGitCommand(store)
 	if err != nil {
 		r.Log.Error(err, "unable to find git")
 		return nil, err
 	}
-	err = os.Chdir(command.store.repoDir)
+	err = os.Chdir(command.getRepository())
 	if err != nil {
-		r.Log.Error(err, "unable to change directory", "data", command.store.repoDir)
+		r.Log.Error(err, "unable to change directory", "data", command.getRepository())
 		return nil, err
 	}
-	ghx, err := githttpxfer.New(command.store.repoDir, command.bin)
+	ghx, err := githttpxfer.New(command.getRepository(), command.getBin())
 	if err != nil {
 		r.Log.Error(err, "unable to create git server instance")
 		return nil, err
@@ -89,7 +124,7 @@ func (r *runContainer) newGitServer(store store, action chan<- string) (*gitServ
 	server := &gitServer{
 		repoName:   r.Config.Main.Repository,
 		head:       r.Config.Main.Head,
-		gitCommand: *command,
+		gitCommand: command,
 		action:     action,
 		log:        log,
 	}
@@ -106,9 +141,8 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 			r.URL.Path = path[len(g.repoName)+1:]
 		}
 		path = r.URL.Path
-		fmt.Printf("forward to %s\n", path)
 		next.ServeHTTP(w, r)
-		if path == fmt.Sprintf("/%s/git-receive-pack", g.repoName) && method == http.MethodPost {
+		if path == "/git-receive-pack" && method == http.MethodPost {
 			g.action <- triggeredMessage
 		}
 	})
@@ -120,10 +154,6 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 // 	log := g.log
 // 	f := func() {
 // 		if _, err := os.Stat(g.workspace); err != nil && errors.Is(err, os.ErrNotExist) {
-// 			if _, err := execCmd(g.gitRootPath, "git", "clone", g.absRepoPath, g.workspace); err != nil {
-// 				log.Error(err, "could not clone", "data", g.absRepoPath)
-// 				return
-// 			}
 // 			return
 // 		}
 // 		output, err := os.ReadFile(path.Join(g.workspace, ".git/HEAD"))

@@ -27,10 +27,15 @@ func Startup(version, commit, date, builtBy string) {
 	if err != nil {
 		os.Exit(1)
 	}
+	gitCommand, err := run.newDefaultGitCommand(*store)
+	if err != nil {
+		log.Error(err, "msg", "could not get GIT")
+		return
+	}
 	defer store.delete()
 	trigger := make(chan string)
 	defer close(trigger)
-	git, err := run.newGitServer(*store, trigger)
+	gitServer, err := run.newGitServer(*store, trigger)
 	if err != nil {
 		log.Error(err, "msg", "could not initialize GIT server")
 		return
@@ -42,7 +47,8 @@ func Startup(version, commit, date, builtBy string) {
 	}
 	ctx, cancel := context.WithCancel(ctx)
 	group.Go(func() error { return NewSignalHandler().Run(ctx, cancel) })
-	group.Go(func() error { return listener1.Run(ctx, *git.ghx) })
+	group.Go(func() error { return listener1.Run(ctx, *gitServer.ghx) })
+	group.Go(func() error { return run.createAndStartWorkflows(ctx, gitCommand, trigger) })
 	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Error(err, "compute have stopped with error")
 	}

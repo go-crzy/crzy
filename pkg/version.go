@@ -23,11 +23,11 @@ func (w *versionSync) start(ctx context.Context, action <-chan string, deploy ch
 			case triggeredMessage:
 				triggered = true
 				if !deploying {
-					_, err := w.command.run()
-					if err != nil {
-						w.Log.Error(err, "error during sync/version of the repository")
-						continue
-					}
+					// _, err := w.command.run()
+					// if err != nil {
+					// 	w.Log.Error(err, "error during sync/version of the repository")
+					// 	continue
+					// }
 					// TODO: check the version does not exist yet, if it does not kick off the deploy
 					deploying = true
 					deploy <- versionedMessage
@@ -36,11 +36,11 @@ func (w *versionSync) start(ctx context.Context, action <-chan string, deploy ch
 				deploying = false
 				if triggered {
 					triggered = false
-					_, err := w.command.run()
-					if err != nil {
-						w.Log.Error(err, "error during sync/version of the repository")
-						continue
-					}
+					// _, err := w.command.run()
+					// if err != nil {
+					// 	w.Log.Error(err, "error during sync/version of the repository")
+					// 	continue
+					// }
 					// TODO: check the version does not exist yet, if it does not kick off the deploy
 					deploying = true
 					deploy <- versionedMessage
