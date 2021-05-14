@@ -6,18 +6,21 @@ import (
 	"github.com/slack-go/slack"
 )
 
-type NotifierStruct struct {
-	Slack SlackStruct
+type notifierStruct struct {
+	Slack slackStruct
 }
 
-type SlackStruct struct{
-	Token string
+type slackStruct struct {
+	Token   string `default:"${SLACK_TOKEN}"`
 	Channel string
 }
 
 func getChannel(token, channel string) string {
 	api := slack.New(token)
-	channels, _, err := api.GetConversations(&slack.GetConversationsParameters{Types: []string{"public_channel"}})
+	channels, _, err := api.GetConversations(
+		&slack.GetConversationsParameters{
+			Types: []string{"public_channel"},
+		})
 	if err != nil {
 		fmt.Printf("%s\n", err)
 		return ""
@@ -27,7 +30,6 @@ func getChannel(token, channel string) string {
 			return c.ID
 		}
 	}
-
 	return ""
 }
 

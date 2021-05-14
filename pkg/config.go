@@ -25,50 +25,59 @@ var (
 )
 
 type config struct {
-	sync.Mutex
-	Main       MainStruct
-	Version    ExecStruct
-	Deployment DeploymentStruct
-	Release    ReleaseStruct
-	Notifier   NotifierStruct
+	*sync.Mutex
+	Main     mainStruct
+	Trigger  triggerStruct
+	Deploy   deployStruct
+	Release  releaseStruct
+	Notifier notifierStruct
 }
 
-type MainStruct struct {
-	Head       string
-	Server     bool
-	Color      bool
+type mainStruct struct {
 	Repository string
+	Head       string
+	Color      bool
 	ApiPort    int `yaml:"api_port"`
 	ProxyPort  int `yaml:"proxy_port"`
 }
 
-type DeploymentStruct struct {
-	Artifact ArtifactStruct
-	Build    ExecStruct
-	Test     ExecStruct
-	Run      ExecStruct
+type triggerStruct struct {
+	Version versionStruct
 }
 
-type ArtifactStruct struct {
-	Type    string
-	Pattern string
+type deployStruct struct {
+	Artifact artifactStruct
+	Install  execStruct
+	Test     execStruct
+	PreBuild execStruct `yaml:"pre_build"`
+	Build    execStruct
 }
 
-type ExecStruct struct {
-	Command   string
-	Args      []string
+type artifactStruct struct {
+	Filename  string
 	Directory string
+	Extension string
 }
 
-type ReleaseStruct struct {
-	Keep     int
-	Model    string
-	Accessor AccessorStruct
+type versionStruct struct {
+	Command string
+	Args    []string
+	WorkDir string
+	Envs    []envVar
 }
 
-type AccessorStruct struct {
-	Type string
-	Name string
+type execStruct struct {
+	Command string
+	Args    []string
+	WorkDir string
+	Envs    []envVar
+	Output  []string
+}
+
+type releaseStruct struct {
+	Type     string
+	Artifact artifactStruct
+	Run      execStruct
 }
 
 func getConfig(lang string, configFile string) (*config, error) {
@@ -93,7 +102,7 @@ func defaultConf(lang string) (*config, error) {
 		conf := &config{}
 		yaml.Unmarshal(yamlFile, conf)
 		if runtime.GOOS == "windows" {
-			conf.Deployment.Artifact.Pattern += ".exe"
+			conf.Release.Artifact.Extension = ".exe"
 		}
 		return conf, nil
 	default:

@@ -16,14 +16,14 @@ type HTTPListener struct {
 	lsnr net.Listener
 }
 
-func NewHTTPListener(addr string) (*HTTPListener, error) {
+func (r *runContainer) newHTTPListener(addr string) (*HTTPListener, error) {
 	lsnr, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 	return &HTTPListener{
 		errc: make(chan error),
-		log:  NewLogger("http"),
+		log:  r.Log.WithName("http"),
 		lsnr: lsnr,
 	}, nil
 }

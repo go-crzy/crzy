@@ -10,19 +10,20 @@ import (
 	"github.com/go-logr/logr"
 )
 
-type SignalHandler struct {
+type signalHandler struct {
 	signalc chan os.Signal
 	log     logr.Logger
 }
 
-func NewSignalHandler() *SignalHandler {
-	return &SignalHandler{
+func (r *runContainer) newSignalHandler() *signalHandler {
+	return &signalHandler{
 		signalc: make(chan os.Signal, 1),
-		log:     NewLogger("signal"),
+		log:     r.Log.WithName("signal"),
 	}
 }
 
-func (c *SignalHandler) Run(ctx context.Context, cancel context.CancelFunc) error {
+func (c *signalHandler) Run(ctx context.Context, cancel context.CancelFunc) error {
+	defer close(c.signalc)
 	log := c.log
 	log.Info("starting signal handler....")
 	signal.Notify(c.signalc, os.Interrupt, syscall.SIGTERM)
