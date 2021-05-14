@@ -8,7 +8,7 @@ import (
 )
 
 type notifierTest struct {
-	Notifier NotifierStruct
+	Notifier notifierStruct
 }
 
 func Test_notifier(t *testing.T) {

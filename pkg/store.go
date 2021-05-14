@@ -1,33 +1,53 @@
 package pkg
 
 import (
-	"context"
 	"os"
+	"path/filepath"
 
 	"github.com/go-logr/logr"
 )
 
-type StoreService struct {
-	workspace string
-	log       logr.Logger
+type store struct {
+	rootDir string
+	repoDir string
+	execDir string
+	workdir string
+	log     logr.Logger
 }
 
-func NewStoreService(workspace string) *StoreService {
-	return &StoreService{
-		workspace: workspace,
-		log:       NewLogger("store"),
-	}
-}
-
-func (m *StoreService) Run(ctx context.Context) error {
-	log := m.log
-	log.Info("starting datastore....")
-	<-ctx.Done()
-	log.Info("stopping datastore....")
-	err := os.RemoveAll(m.workspace)
+func (r *runContainer) createStore() (*store, error) {
+	log := r.Log.WithName("store")
+	rootDir, err := os.MkdirTemp("", "crzy")
 	if err != nil {
-		log.Error(err, "error deleting workspace", "data", m.workspace)
+		log.Info("unable to create temporary directory")
+		return nil, err
 	}
-	log.Info("datastore stopped....")
-	return ctx.Err()
+	repoDir := filepath.Join(rootDir, "repository")
+	workDir := filepath.Join(rootDir, "workspace")
+	execDir := filepath.Join(rootDir, "execs")
+	for _, dir := range []string{repoDir, execDir, workDir} {
+		err = os.Mkdir(dir, os.ModeDir|os.ModePerm)
+		if err != nil {
+			log.Info("unable to create directory")
+			return nil, err
+		}
+	}
+	log.Info("directory created", "data", rootDir)
+	return &store{
+		execDir: execDir,
+		log:     log,
+		repoDir: repoDir,
+		rootDir: rootDir,
+		workdir: workDir,
+	}, nil
+}
+
+func (s *store) delete() error {
+	err := os.RemoveAll(s.rootDir)
+	if err != nil {
+		s.log.Error(err, "error deleting store...")
+		return err
+	}
+	s.log.Info("store deleted with success....")
+	return nil
 }

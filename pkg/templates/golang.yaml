@@ -6,16 +6,17 @@ main:
   api_port: 8080
   proxy_port: 8081
 
-version:
-  command: git
-  args:
-  - log
-  - "-1"
-  - "--format=%H"
-  - "."
-  directory: "."
+trigger:
+  version:
+    command: git
+    args:
+    - log
+    - "-1"
+    - "--format=%H"
+    - "."
+    workdir: "."
   
-deployment:
+deploy:
   artifact:
     type: executable
     pattern: go-${version}
@@ -26,10 +27,10 @@ deployment:
     - "-o"
     - ${artifact}
     - "."
-    directory: "."
+    workdir: "."
   test:
     command: go
     args: 
     - test
     - "./..."
-    directory: "."
+    workdir: "."

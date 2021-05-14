@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"runtime"
@@ -9,45 +10,43 @@ import (
 
 func Test_defaultConf_and_succeed(t *testing.T) {
 	d := &config{
-		Main: MainStruct{
+		Main: mainStruct{
 			Head:       "main",
-			Server:     true,
 			Color:      true,
 			Repository: "myrepo",
 			ApiPort:    8080,
 			ProxyPort:  8081,
 		},
-		Version: ExecStruct{
-			Command:   "git",
-			Args:      []string{"log", "-1", "--format=%H", "."},
-			Directory: ".",
+		Trigger: triggerStruct{
+			Version: versionStruct{
+				Command: "git",
+				Args:    []string{"log", "-1", "--format=%H", "."},
+				WorkDir: ".",
+			},
 		},
-		Deployment: DeploymentStruct{
-			Artifact: ArtifactStruct{
-				Type:    "executable",
-				Pattern: `go-${version}`,
+		Deploy: deployStruct{
+			Build: execStruct{
+				Command: "go",
+				Args:    []string{"build", "-o", `${artifact}`, "."},
+				WorkDir: ".",
 			},
-			Build: ExecStruct{
-				Command:   "go",
-				Args:      []string{"build", "-o", `${artifact}`, "."},
-				Directory: ".",
-			},
-			Test: ExecStruct{
-				Command:   "go",
-				Args:      []string{"test", "./..."},
-				Directory: ".",
+			Test: execStruct{
+				Command: "go",
+				Args:    []string{"test", "./..."},
+				WorkDir: ".",
 			},
 		},
 	}
 	if runtime.GOOS == "windows" {
-		d.Deployment.Artifact.Pattern += ".exe"
+		_ = ".exe"
 	}
 	c, err := defaultConf("golang")
 	if err != nil {
 		t.Error("expect defaultConf with golang to succeed")
 	}
 	if !reflect.DeepEqual(c, d) {
-		t.Error("Parsed and original values do not match")
+		text, _ := json.Marshal(&c)
+		t.Error("values do not match", string(text))
 	}
 }
 

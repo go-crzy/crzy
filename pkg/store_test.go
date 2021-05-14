@@ -1,39 +1,33 @@
 package pkg
 
 import (
-	"context"
-	"errors"
-	"os"
 	"testing"
-
-	"golang.org/x/sync/errgroup"
 )
 
-// Test_StoreClose makes sure the directory associated with the store is cleaned
-// up when the program stops.
-func Test_StoreClose(t *testing.T) {
-	dir := "./store-test"
-	err := os.Mkdir(dir, os.ModeDir|os.ModePerm)
+// Test_StoreCreateAndDelete
+func Test_StoreCreateAndDelete(t *testing.T) {
+	run := runContainer{
+		Log: &mockLogger{},
+	}
+	store, err := run.createStore()
 	if err != nil {
-		t.Errorf("store start failed, err: %v", err)
-	}
-
-	g := new(errgroup.Group)
-	storeservice := NewStoreService(dir)
-	ctx := context.TODO()
-	storeCtx, cancel := context.WithCancel(ctx)
-	g.Go(func() error { return storeservice.Run(storeCtx) })
-	cancel()
-	if err := g.Wait(); err != context.Canceled {
-		t.Errorf("program has stopped (%v)", err)
-	}
-	_, err = os.Stat(dir)
-	if err == nil {
-		t.Error("directory should have been cleaned up")
-		os.RemoveAll("./store-test")
+		t.Error("could not create store", err)
 		t.FailNow()
 	}
-	if !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("directory should have been cleaned up: %v", err)
+	err = store.delete()
+	if err != nil {
+		t.Error("could not delete store", err)
+	}
+}
+
+// Test_StoreCreateAndDelete
+func Test_StoreDeleteAndFail(t *testing.T) {
+	s := &store{
+		rootDir: "/doesnotexist",
+		log:     &mockLogger{},
+	}
+	err := s.delete()
+	if err != nil {
+		t.Error("could not create store", err)
 	}
 }

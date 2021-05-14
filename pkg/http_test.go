@@ -29,7 +29,7 @@ func Test_LoggingMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("hello"))
 	})
-	server := httptest.NewServer(LoggingMiddleware(NewLogger("demo"), handler))
+	server := httptest.NewServer(LoggingMiddleware(newCrzyLogger("demo", false), handler))
 	client := server.Client()
 
 	request, _ := http.NewRequest("Get", server.URL, nil)

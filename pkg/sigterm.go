@@ -18,7 +18,7 @@ type SignalHandler struct {
 func NewSignalHandler() *SignalHandler {
 	return &SignalHandler{
 		signalc: make(chan os.Signal, 1),
-		log:     NewLogger("signal"),
+		log:     newCrzyLogger("signal", false),
 	}
 }
 

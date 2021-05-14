@@ -33,7 +33,7 @@ func Test_ReplaceEnv_and_failure(t *testing.T) {
 }
 
 func Test_GroupEnvs_and_succeed(t *testing.T) {
-	input := []EnvVar{{Name: "VERSION", Value: "1.0"}, {Name: "PORT", Value: "8080"}}
+	input := []envVar{{Name: "VERSION", Value: "1.0"}, {Name: "PORT", Value: "8080"}}
 	mapOfEnvs, err := groupEnvs(input...)
 	if err != nil {
 		t.Error("groupEnvs should succeed")
@@ -55,7 +55,7 @@ func Test_GroupEnvs_and_succeed(t *testing.T) {
 }
 
 func Test_GroupEnvs_and_fail(t *testing.T) {
-	input := []EnvVar{{Name: "VERSION", Value: "1.0"}, {Name: "VERSION", Value: "2.0"}}
+	input := []envVar{{Name: "VERSION", Value: "1.0"}, {Name: "VERSION", Value: "2.0"}}
 	mapOfEnvs, err := groupEnvs(input...)
 	if err != ErrDuplicateKeys {
 		t.Error("groupEnvs should return ErrDuplicateKeys")

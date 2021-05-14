@@ -6,8 +6,8 @@ import (
 	"testing"
 )
 
-func Test_NewLogger(t *testing.T) {
-	v := NewLogger("main")
+func Test_NewCrzyLogger(t *testing.T) {
+	v := newCrzyLogger("main", false)
 	if v == nil {
 		t.Error("should not be nil")
 		t.FailNow()

@@ -4,21 +4,24 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 )
 
-func NewLogger(name string) logr.Logger {
+func newCrzyLogger(name string, color bool) logr.Logger {
 	return &crzyLogger{
 		name:          name,
 		keysAndValues: map[string]string{},
 		out:           os.Stdout,
+		color:         color,
 	}
 }
 
 type crzyLogger struct {
+	color         bool
 	name          string
 	keysAndValues map[string]string
 	level         int
@@ -51,6 +54,8 @@ func (c *crzyLogger) Error(err error, msg string, keysAndValues ...interface{}) 
 
 func (c *crzyLogger) V(level int) logr.Logger {
 	return &crzyLogger{
+		out:           c.out,
+		color:         c.color,
 		name:          c.name,
 		keysAndValues: c.keysAndValues,
 		level:         level,
@@ -59,6 +64,8 @@ func (c *crzyLogger) V(level int) logr.Logger {
 
 func (c *crzyLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
 	output := &crzyLogger{
+		out:           c.out,
+		color:         c.color,
 		name:          c.name,
 		keysAndValues: c.keysAndValues,
 		level:         c.level,
@@ -77,6 +84,8 @@ func (c *crzyLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
 
 func (c *crzyLogger) WithName(name string) logr.Logger {
 	return &crzyLogger{
+		out:           c.out,
+		color:         c.color,
 		name:          name,
 		keysAndValues: c.keysAndValues,
 		level:         c.level,
@@ -116,7 +125,7 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 		}
 	}
 	if data, ok := keys["data"]; ok {
-		n := 50
+		n := 65
 		if len(data) < n {
 			n = len(data)
 		}
@@ -126,7 +135,7 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 }
 
 func (c *crzyLogger) colorPrint(name, log string) {
-	if !conf.Main.Color {
+	if !c.color {
 		fmt.Fprintln(c.out, log)
 		return
 	}
@@ -146,4 +155,37 @@ func (c *crzyLogger) colorPrint(name, log string) {
 		foreground = color.FgMagenta
 	}
 	color.New(foreground).Fprintln(c.out, log)
+}
+
+type mockLogger struct {
+	sync.Mutex
+	logs []string
+}
+
+func (l *mockLogger) Enabled() bool {
+	return true
+}
+
+func (l *mockLogger) Info(msg string, keysAndValues ...interface{}) {
+	l.Lock()
+	defer l.Unlock()
+	l.logs = append(l.logs, msg)
+}
+
+func (l *mockLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+	l.Lock()
+	defer l.Unlock()
+	l.logs = append(l.logs, msg)
+}
+
+func (l *mockLogger) V(level int) logr.Logger {
+	return &mockLogger{}
+}
+
+func (c *mockLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
+	return &mockLogger{}
+}
+
+func (c *mockLogger) WithName(name string) logr.Logger {
+	return &mockLogger{}
 }

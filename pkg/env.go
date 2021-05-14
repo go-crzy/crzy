@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-type EnvVar struct {
+type envVar struct {
 	Name  string
 	Value string
 }
@@ -35,7 +35,7 @@ func replaceEnvs(param string, envs map[string]string) (string, error) {
 
 // groupEnvs returns a map of values built with EnvVar and detect when there
 // is a duplicate key in the list
-func groupEnvs(envs ...EnvVar) (map[string]string, error) {
+func groupEnvs(envs ...envVar) (map[string]string, error) {
 	keys := map[string]string{}
 	for _, v := range envs {
 		if _, ok := keys[v.Name]; ok {

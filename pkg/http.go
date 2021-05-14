@@ -23,7 +23,7 @@ func NewHTTPListener(addr string) (*HTTPListener, error) {
 	}
 	return &HTTPListener{
 		errc: make(chan error),
-		log:  NewLogger("http"),
+		log:  newCrzyLogger("http", false),
 		lsnr: lsnr,
 	}, nil
 }
