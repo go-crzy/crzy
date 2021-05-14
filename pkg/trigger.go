@@ -8,7 +8,8 @@ import (
 )
 
 type triggerWorkflow struct {
-	triggerStruct
+	trigger triggerStruct
+	head    string
 	log     logr.Logger
 	command runner
 	git     gitCommand
@@ -16,6 +17,7 @@ type triggerWorkflow struct {
 
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan string, deploy chan<- string) error {
 	log := w.log.WithName("trigger")
+	firstsync := true
 	deploying := false
 	triggered := false
 	for {
@@ -23,12 +25,22 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan string, deplo
 		case action := <-action:
 			switch action {
 			case triggeredMessage:
+				log.Info("starting trigger...")
 				triggered = true
 				if !deploying {
 					triggered = false
+					if firstsync {
+						firstsync = false
+						continue
+					}
+					err := w.git.syncWorkspace(w.head)
+					if err != nil {
+						log.Error(err, "error during sync of the repository")
+						continue
+					}
 					version, err := w.command.run()
 					if err != nil {
-						log.Error(err, "error during sync/version of the repository")
+						log.Error(err, "error during version of the repository")
 						continue
 					}
 					// TODO: check the version does not exist yet, if it does not kick off the deploy
@@ -66,14 +78,13 @@ func (d *DefaultVersionAndSync) run() (string, error) {
 	return "1", nil
 }
 
-type MockVersionAndSyncSucceed struct{}
-
-func (w *MockVersionAndSyncSucceed) run() (string, error) {
-	return "1", nil
+type mockVersionAndSync struct {
+	output bool
 }
 
-type MockVersionAndSyncFailed struct{}
-
-func (w *MockVersionAndSyncFailed) run() (string, error) {
-	return "", errors.New("error")
+func (w *mockVersionAndSync) run() (string, error) {
+	if w.output {
+		return "1", nil
+	}
+	return "1", errors.New("error")
 }

@@ -10,24 +10,27 @@ import (
 
 func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 	trigger := &triggerWorkflow{
-		triggerStruct: triggerStruct{},
-		log:           &mockLogger{},
-		command:       &MockVersionAndSyncSucceed{},
+		trigger: triggerStruct{},
+		log:     &mockLogger{},
+		command: &mockVersionAndSync{output: true},
+		head:    "main",
+		git:     &mockGitCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
-	startVersion := make(chan string)
-	defer close(startVersion)
+	startTrigger := make(chan string)
+	defer close(startTrigger)
 	startDeploy := make(chan string)
 	defer close(startDeploy)
-	g.Go(func() error { return trigger.start(ctx, startVersion, startDeploy) })
-	startVersion <- triggeredMessage
+	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
+	startTrigger <- triggeredMessage
+	startTrigger <- triggeredMessage
 	deploy := <-startDeploy
 	if deploy != triggeredMessage {
 		t.Error("deploy should start version")
 	}
-	startVersion <- triggeredMessage
-	startVersion <- deployedMessage
+	startTrigger <- triggeredMessage
+	startTrigger <- deployedMessage
 	deploy = <-startDeploy
 	if deploy != triggeredMessage {
 		t.Error("deploy should start version")
@@ -39,10 +42,13 @@ func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 }
 
 func Test_VersionWorkflowWithFailure(t *testing.T) {
+	command := mockVersionAndSync{output: true}
 	trigger := &triggerWorkflow{
-		triggerStruct: triggerStruct{},
-		log:           &mockLogger{},
-		command:       &MockVersionAndSyncFailed{},
+		trigger: triggerStruct{},
+		log:     &mockLogger{},
+		command: &command,
+		head:    "main",
+		git:     &mockGitCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -52,14 +58,19 @@ func Test_VersionWorkflowWithFailure(t *testing.T) {
 	defer close(startDeploy)
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
 	startTrigger <- triggeredMessage
-	trigger.command = &MockVersionAndSyncSucceed{}
+	time.Sleep(100 * time.Microsecond)
+	command.output = false
+	startTrigger <- triggeredMessage
+	time.Sleep(100 * time.Microsecond)
+	command.output = true
 	startTrigger <- triggeredMessage
 	deploy := <-startDeploy
 	if deploy != triggeredMessage {
 		t.Error("deploy should start version")
 	}
 	startTrigger <- triggeredMessage
-	trigger.command = &MockVersionAndSyncFailed{}
+	time.Sleep(100 * time.Microsecond)
+	command.output = false
 	startTrigger <- deployedMessage
 	time.Sleep(200 * time.Millisecond)
 	cancel()

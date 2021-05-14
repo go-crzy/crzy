@@ -12,6 +12,11 @@ const (
 )
 
 func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger chan string) error {
+	err := git.cloneRepository()
+	if err != nil {
+		r.Log.Error(err, "error cloning repository")
+		return err
+	}
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 	deploy := &deployWorkflow{
@@ -19,10 +24,11 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 		log:          r.Log,
 	}
 	trigger := &triggerWorkflow{
-		triggerStruct: r.Config.Trigger,
-		log:           r.Log,
-		command:       &MockVersionAndSyncSucceed{},
-		git:           git,
+		trigger: r.Config.Trigger,
+		head:    r.Config.Main.Head,
+		log:     r.Log,
+		command: &mockVersionAndSync{output: true},
+		git:     git,
 	}
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
@@ -32,8 +38,8 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 	defer close(startDeploy)
 	startRelease := make(chan string)
 	defer close(startRelease)
-	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startTrigger) })
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
+	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startTrigger) })
 	g.Go(func() error { return release.start(ctx, startRelease) })
 	<-ctx.Done()
 	cancel()

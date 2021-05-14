@@ -12,7 +12,7 @@ type deployWorkflow struct {
 	log logr.Logger
 }
 
-func (w *deployWorkflow) start(ctx context.Context, action <-chan string, release, version chan<- string) error {
+func (w *deployWorkflow) start(ctx context.Context, action <-chan string, release, trigger chan<- string) error {
 	log := w.log.WithName("deploy")
 	for {
 		select {
@@ -20,7 +20,7 @@ func (w *deployWorkflow) start(ctx context.Context, action <-chan string, releas
 			msg := fmt.Sprintf("action %s started...", action)
 			log.Info(msg)
 			release <- deployedMessage
-			version <- deployedMessage
+			trigger <- deployedMessage
 		case <-ctx.Done():
 			return nil
 		}

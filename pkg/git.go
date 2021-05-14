@@ -22,7 +22,7 @@ type gitCommand interface {
 	cloneRepository() error
 	getBin() string
 	getRepository() string
-	getWorkspaceSync(string) (bool, error)
+	syncWorkspace(string) error
 }
 
 type defaultGitCommand struct {
@@ -52,37 +52,37 @@ func (git *defaultGitCommand) initRepository() error {
 }
 
 func (git *defaultGitCommand) cloneRepository() error {
-	if _, err := execCmd(git.store.workdir, git.bin, "clome", git.store.repoDir, "."); err != nil {
+	if _, err := execCmd(git.store.workdir, git.bin, "clone", git.store.repoDir, "."); err != nil {
 		git.log.Error(err, "could not clone repository")
 		return err
 	}
 	return nil
 }
 
-func (git *defaultGitCommand) getWorkspaceSync(head string) (bool, error) {
+func (git *defaultGitCommand) syncWorkspace(head string) error {
 	log := git.log
 	output, err := os.ReadFile(path.Join(git.store.workdir, ".git/HEAD"))
 	if err != nil {
 		git.log.Error(err, "cannot read .git/HEAD")
-		return false, err
+		return err
 	}
 	current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
 	if current != head {
-		if output, err := execCmd(git.store.repoDir, "git", "fetch", "-p"); err != nil {
+		if output, err := execCmd(git.store.workdir, "git", "fetch", "-p"); err != nil {
 			log.Error(err, "could not run git fetch,", "data", string(output))
-			return true, err
+			return err
 		}
-		if output, err := execCmd(git.store.repoDir, "git", "checkout", head); err != nil {
+		if output, err := execCmd(git.store.workdir, "git", "checkout", head); err != nil {
 			log.Error(err, "could not run git checkout,", "data", string(output))
-			return true, err
+			return err
 		}
-		return true, nil
+		return nil
 	}
-	if output, err := execCmd(git.store.repoDir, "git", "pull"); err != nil {
+	if output, err := execCmd(git.store.workdir, "git", "pull"); err != nil {
 		log.Error(err, "could not run git pull,", "data", string(output))
-		return false, err
+		return err
 	}
-	return false, nil
+	return nil
 }
 
 func (git *defaultGitCommand) getBin() string {
@@ -112,8 +112,8 @@ func (git *mockGitCommand) getRepository() string {
 	return "/repository"
 }
 
-func (git *mockGitCommand) getWorkspaceSync(head string) (bool, error) {
-	return false, nil
+func (git *mockGitCommand) syncWorkspace(head string) error {
+	return nil
 }
 
 type gitServer struct {
