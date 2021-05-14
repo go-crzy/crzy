@@ -22,6 +22,7 @@ type gitCommand interface {
 	cloneRepository() error
 	getBin() string
 	getRepository() string
+	getWorkspace() string
 	syncWorkspace(string) error
 }
 
@@ -93,6 +94,10 @@ func (git *defaultGitCommand) getRepository() string {
 	return git.store.repoDir
 }
 
+func (git *defaultGitCommand) getWorkspace() string {
+	return git.store.workdir
+}
+
 type mockGitCommand struct {
 }
 
@@ -112,6 +117,10 @@ func (git *mockGitCommand) getRepository() string {
 	return "/repository"
 }
 
+func (git *mockGitCommand) getWorkspace() string {
+	return "/workspace"
+}
+
 func (git *mockGitCommand) syncWorkspace(head string) error {
 	return nil
 }
@@ -121,11 +130,11 @@ type gitServer struct {
 	head       string
 	gitCommand gitCommand
 	ghx        *http.Handler
-	action     chan<- string
+	action     chan<- event
 	log        logr.Logger
 }
 
-func (r *runContainer) newGitServer(store store, action chan<- string) (*gitServer, error) {
+func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServer, error) {
 	log := r.Log.WithName("git")
 	command, err := r.newDefaultGitCommand(store)
 	if err != nil {
@@ -176,7 +185,7 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 		path = r.URL.Path
 		next.ServeHTTP(w, r)
 		if path == "/git-receive-pack" && method == http.MethodPost {
-			g.action <- triggeredMessage
+			g.action <- event{id: triggeredMessage}
 		}
 	})
 }

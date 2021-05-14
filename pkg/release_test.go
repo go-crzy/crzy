@@ -14,10 +14,10 @@ func Test_ReleaseWorkflow(t *testing.T) {
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
-	startRelease := make(chan string)
+	startRelease := make(chan event)
 	defer close(startRelease)
 	g.Go(func() error { return release.start(ctx, startRelease) })
-	startRelease <- "start"
+	startRelease <- event{id: "start"}
 	time.Sleep(200 * time.Millisecond)
 	cancel()
 	if err := g.Wait(); err != nil && err.Error() != "context cancel" {

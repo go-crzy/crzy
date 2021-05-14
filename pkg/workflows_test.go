@@ -20,7 +20,7 @@ func Test_WorkflowsAndCancel(t *testing.T) {
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
-	startTrigger := make(chan string)
+	startTrigger := make(chan event)
 	defer close(startTrigger)
 	git := &mockGitCommand{}
 	g.Go(func() error { return r.createAndStartWorkflows(ctx, git, startTrigger) })

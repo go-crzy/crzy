@@ -13,20 +13,20 @@ func Test_DeployWorkflow(t *testing.T) {
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
-	startDeploy := make(chan string)
+	startDeploy := make(chan event)
 	defer close(startDeploy)
-	startRelease := make(chan string)
+	startRelease := make(chan event)
 	defer close(startRelease)
-	startVersion := make(chan string)
-	defer close(startVersion)
-	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startVersion) })
-	startDeploy <- deployedMessage
+	startTrigger := make(chan event)
+	defer close(startTrigger)
+	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startTrigger) })
+	startDeploy <- event{id: deployedMessage}
 	release := <-startRelease
-	if release != deployedMessage {
+	if release.id != deployedMessage {
 		t.Error("deploy should start release, current:", release)
 	}
-	version := <-startVersion
-	if version != deployedMessage {
+	version := <-startTrigger
+	if version.id != deployedMessage {
 		t.Error("deploy should send deployed to version")
 	}
 	cancel()

@@ -33,7 +33,7 @@ func Startup(version, commit, date, builtBy string) {
 		return
 	}
 	defer store.delete()
-	trigger := make(chan string)
+	trigger := make(chan event)
 	defer close(trigger)
 	gitServer, err := run.newGitServer(*store, trigger)
 	if err != nil {

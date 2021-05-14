@@ -11,7 +11,12 @@ const (
 	deployedMessage  string = "deployed"
 )
 
-func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger chan string) error {
+type event struct {
+	id   string
+	envs []envVar
+}
+
+func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger chan event) error {
 	err := git.cloneRepository()
 	if err != nil {
 		r.Log.Error(err, "error cloning repository")
@@ -27,16 +32,16 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 		trigger: r.Config.Trigger,
 		head:    r.Config.Main.Head,
 		log:     r.Log,
-		command: &mockVersionAndSync{output: true},
 		git:     git,
+		command: &defaultTriggerCommand{},
 	}
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
 		log:           r.Log,
 	}
-	startDeploy := make(chan string)
+	startDeploy := make(chan event)
 	defer close(startDeploy)
-	startRelease := make(chan string)
+	startRelease := make(chan event)
 	defer close(startRelease)
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
 	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startTrigger) })

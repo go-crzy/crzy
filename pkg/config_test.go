@@ -17,13 +17,6 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			ApiPort:    8080,
 			ProxyPort:  8081,
 		},
-		Trigger: triggerStruct{
-			Version: versionStruct{
-				Command: "git",
-				Args:    []string{"log", "-1", "--format=%H", "."},
-				WorkDir: ".",
-			},
-		},
 		Deploy: deployStruct{
 			Build: execStruct{
 				Command: "go",
