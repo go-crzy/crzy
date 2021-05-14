@@ -47,6 +47,11 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
 		log:           r.Log,
+		execdir:       git.getExecdir(),
+		keys: map[string]execStruct{
+			"run": r.Config.Release.Run,
+		},
+		flow: []string{"run"},
 	}
 	startDeploy := make(chan event)
 	defer close(startDeploy)

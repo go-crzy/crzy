@@ -32,7 +32,17 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 				WorkDir: ".",
 			},
 		},
-	}
+		Release: releaseStruct{
+			Run: execStruct{
+				Command: "./go-${version}",
+				WorkDir: ".",
+				Envs:    []envVar{{Name: "ADDR", Value: "localhost:${port}"}},
+			},
+			PortRange: portRangeStruct{
+				Min: 8090,
+				Max: 8100,
+			},
+		}}
 	if runtime.GOOS == "windows" {
 		_ = ".exe"
 	}

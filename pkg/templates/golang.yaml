@@ -23,3 +23,14 @@ deploy:
     - test
     - "./..."
     workdir: "."
+
+release:
+  port_range:
+    min: 8090
+    max: 8100
+  run:
+    command: ./go-${version}
+    workdir: "."
+    envs:
+    - name: ADDR
+      value: "localhost:${port}"

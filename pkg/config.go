@@ -70,6 +70,16 @@ type versionStruct struct {
 	Envs    []envVar
 }
 
+type portRangeStruct struct {
+	Min int `yaml:"min"`
+	Max int `yaml:"max"`
+}
+
+type releaseStruct struct {
+	PortRange portRangeStruct `yaml:"port_range"`
+	Run       execStruct
+}
+
 type execStruct struct {
 	log     logr.Logger
 	Command string
@@ -110,12 +120,6 @@ func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, err
 	return nil, nil
 }
 
-type releaseStruct struct {
-	Type     string
-	Artifact artifactStruct
-	Run      execStruct
-}
-
 func getConfig(lang string, configFile string) (*config, error) {
 	conf, err := defaultConf(lang)
 	if err != nil {
@@ -138,7 +142,7 @@ func defaultConf(lang string) (*config, error) {
 		conf := &config{}
 		yaml.Unmarshal(yamlFile, conf)
 		if runtime.GOOS == "windows" {
-			conf.Release.Artifact.Extension = ".exe"
+			conf.Deploy.Artifact.Extension = ".exe"
 		}
 		return conf, nil
 	default:
