@@ -8,8 +8,7 @@ main:
   
 deploy:
   artifact:
-    type: executable
-    pattern: go-${version}
+    filename: go-${version}
   build:
     command: go
     args:

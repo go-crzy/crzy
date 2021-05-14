@@ -23,6 +23,7 @@ type gitCommand interface {
 	getBin() string
 	getRepository() string
 	getWorkspace() string
+	getExecdir() string
 	syncWorkspace(string) error
 }
 
@@ -98,6 +99,10 @@ func (git *defaultGitCommand) getWorkspace() string {
 	return git.store.workdir
 }
 
+func (git *defaultGitCommand) getExecdir() string {
+	return git.store.execDir
+}
+
 type mockGitCommand struct {
 }
 
@@ -119,6 +124,10 @@ func (git *mockGitCommand) getRepository() string {
 
 func (git *mockGitCommand) getWorkspace() string {
 	return "/workspace"
+}
+
+func (git *mockGitCommand) getExecdir() string {
+	return "/executions"
 }
 
 func (git *mockGitCommand) syncWorkspace(head string) error {
