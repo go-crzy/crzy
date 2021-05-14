@@ -18,6 +18,9 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			ProxyPort:  8081,
 		},
 		Deploy: deployStruct{
+			Artifact: artifactStruct{
+				Filename: "go-${version}",
+			},
 			Build: execStruct{
 				Command: "go",
 				Args:    []string{"build", "-o", `${artifact}`, "."},

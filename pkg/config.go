@@ -3,10 +3,14 @@ package pkg
 import (
 	"embed"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"path"
 	"runtime"
+	"strings"
 	"sync"
 
+	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -67,11 +71,43 @@ type versionStruct struct {
 }
 
 type execStruct struct {
+	log     logr.Logger
 	Command string
 	Args    []string
 	WorkDir string
 	Envs    []envVar
-	Output  []string
+	Output  string
+}
+
+func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, error) {
+	dir := path.Join(workspace, e.WorkDir)
+	command, err := replaceEnvs(e.Command, envs)
+	if err != nil {
+		return nil, err
+	}
+	args := []string{}
+	full := command
+	for _, arg := range e.Args {
+		arg, err = replaceEnvs(arg, envs)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		full = fmt.Sprintf("%s %s", full, arg)
+	}
+	e.log.Info(full)
+	output, err := execCmd(dir, command, args...)
+	if err != nil {
+		return nil, err
+	}
+	results := strings.Split(string(output), "\n")
+	for _, v := range results {
+		e.log.Info(v)
+	}
+	if e.Output != "" {
+		return &envVar{Name: e.Output, Value: results[0]}, nil
+	}
+	return nil, nil
 }
 
 type releaseStruct struct {

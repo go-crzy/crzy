@@ -12,7 +12,7 @@ import (
 var errWrongVersionOutput error = errors.New("wrongversion")
 
 type triggerWorkflow struct {
-	trigger triggerStruct
+	triggerStruct
 	head    string
 	log     logr.Logger
 	git     gitCommand
@@ -95,7 +95,7 @@ func (d *defaultTriggerCommand) setTriggerWorkflow(w triggerWorkflow) {
 
 func (d *defaultTriggerCommand) version() (string, error) {
 	log := d.trigger.log
-	if d.trigger.trigger.Version.Command == "" {
+	if d.trigger.Version.Command == "" {
 		output, err := execCmd(d.trigger.git.getWorkspace(), d.trigger.git.getBin(), "log", "--format=%H", "-1", ".")
 		if err != nil {
 			log.Error(err, "could not get macro version")
@@ -106,8 +106,8 @@ func (d *defaultTriggerCommand) version() (string, error) {
 		}
 		return string(output[0:16]), nil
 	}
-	workdir := path.Join(d.trigger.git.getWorkspace(), d.trigger.trigger.Version.WorkDir)
-	output, err := execCmd(workdir, d.trigger.trigger.Version.Command, d.trigger.trigger.Version.Args...)
+	workdir := path.Join(d.trigger.git.getWorkspace(), d.trigger.Version.WorkDir)
+	output, err := execCmd(workdir, d.trigger.Version.Command, d.trigger.Version.Args...)
 	if err != nil {
 		log.Error(err, "could not get execution version")
 		return "", err

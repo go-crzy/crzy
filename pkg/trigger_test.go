@@ -10,11 +10,11 @@ import (
 
 func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 	trigger := &triggerWorkflow{
-		trigger: triggerStruct{},
-		log:     &mockLogger{},
-		command: &mockTriggerCommand{output: true},
-		head:    "main",
-		git:     &mockGitCommand{},
+		triggerStruct: triggerStruct{},
+		log:           &mockLogger{},
+		command:       &mockTriggerCommand{output: true},
+		head:          "main",
+		git:           &mockGitCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -44,11 +44,11 @@ func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 func Test_VersionWorkflowWithFailure(t *testing.T) {
 	command := &mockTriggerCommand{output: true}
 	trigger := &triggerWorkflow{
-		trigger: triggerStruct{},
-		log:     &mockLogger{},
-		command: command,
-		head:    "main",
-		git:     &mockGitCommand{},
+		triggerStruct: triggerStruct{},
+		log:           &mockLogger{},
+		command:       command,
+		head:          "main",
+		git:           &mockGitCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -81,7 +81,7 @@ func Test_VersionWorkflowWithFailure(t *testing.T) {
 
 func Test_VersionCommand(t *testing.T) {
 	w := &triggerWorkflow{
-		trigger: triggerStruct{
+		triggerStruct: triggerStruct{
 			Version: versionStruct{
 				Command: "echo",
 				Args:    []string{"-n", "1"},

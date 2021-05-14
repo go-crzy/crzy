@@ -26,14 +26,23 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 	ctx, cancel := context.WithCancel(ctx)
 	deploy := &deployWorkflow{
 		deployStruct: r.Config.Deploy,
+		workspace:    git.getWorkspace(),
+		execdir:      git.getExecdir(),
 		log:          r.Log,
+		keys: map[string]execStruct{
+			"install":   r.Config.Deploy.Install,
+			"test":      r.Config.Deploy.Test,
+			"pre_build": r.Config.Deploy.PreBuild,
+			"build":     r.Config.Deploy.Build,
+		},
+		flow: []string{"install", "test", "pre_build", "build"},
 	}
 	trigger := &triggerWorkflow{
-		trigger: r.Config.Trigger,
-		head:    r.Config.Main.Head,
-		log:     r.Log,
-		git:     git,
-		command: &defaultTriggerCommand{},
+		triggerStruct: r.Config.Trigger,
+		head:          r.Config.Main.Head,
+		log:           r.Log,
+		git:           git,
+		command:       &defaultTriggerCommand{},
 	}
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
