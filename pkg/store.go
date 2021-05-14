@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"os"
-	"path/filepath"
+	"path"
 
 	"github.com/go-logr/logr"
 )
@@ -22,9 +22,9 @@ func (r *runContainer) createStore() (*store, error) {
 		log.Info("unable to create temporary directory")
 		return nil, err
 	}
-	repoDir := filepath.Join(rootDir, "repository")
-	workDir := filepath.Join(rootDir, "workspace")
-	execDir := filepath.Join(rootDir, "execs")
+	repoDir := path.Join(rootDir, "repository")
+	workDir := path.Join(rootDir, "workspace")
+	execDir := path.Join(rootDir, "execs")
 	for _, dir := range []string{repoDir, execDir, workDir} {
 		err = os.Mkdir(dir, os.ModeDir|os.ModePerm)
 		if err != nil {

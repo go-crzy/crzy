@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
@@ -20,6 +22,7 @@ type gitCommand interface {
 	cloneRepository() error
 	getBin() string
 	getRepository() string
+	getWorkspaceSync(string) (bool, error)
 }
 
 type defaultGitCommand struct {
@@ -56,6 +59,32 @@ func (git *defaultGitCommand) cloneRepository() error {
 	return nil
 }
 
+func (git *defaultGitCommand) getWorkspaceSync(head string) (bool, error) {
+	log := git.log
+	output, err := os.ReadFile(path.Join(git.store.workdir, ".git/HEAD"))
+	if err != nil {
+		git.log.Error(err, "cannot read .git/HEAD")
+		return false, err
+	}
+	current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
+	if current != head {
+		if output, err := execCmd(git.store.repoDir, "git", "fetch", "-p"); err != nil {
+			log.Error(err, "could not run git fetch,", "data", string(output))
+			return true, err
+		}
+		if output, err := execCmd(git.store.repoDir, "git", "checkout", head); err != nil {
+			log.Error(err, "could not run git checkout,", "data", string(output))
+			return true, err
+		}
+		return true, nil
+	}
+	if output, err := execCmd(git.store.repoDir, "git", "pull"); err != nil {
+		log.Error(err, "could not run git pull,", "data", string(output))
+		return false, err
+	}
+	return false, nil
+}
+
 func (git *defaultGitCommand) getBin() string {
 	return git.bin
 }
@@ -81,6 +110,10 @@ func (git *mockGitCommand) getBin() string {
 
 func (git *mockGitCommand) getRepository() string {
 	return "/repository"
+}
+
+func (git *mockGitCommand) getWorkspaceSync(head string) (bool, error) {
+	return false, nil
 }
 
 type gitServer struct {
@@ -147,121 +180,3 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 		}
 	})
 }
-
-// Update refresh the workarea from the GIT repository, build the artifact and
-// roll the upstream with the latest version
-// func (g *GitServer) Update(repo string) {
-// 	log := g.log
-// 	f := func() {
-// 		if _, err := os.Stat(g.workspace); err != nil && errors.Is(err, os.ErrNotExist) {
-// 			return
-// 		}
-// 		output, err := os.ReadFile(path.Join(g.workspace, ".git/HEAD"))
-// 		if err != nil {
-// 			log.Error(err, "cannot read .git/HEAD")
-// 			return
-// 		}
-// 		current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
-// 		if current != g.head {
-// 			if output, err := execCmd(g.workspace, "git", "fetch", "-p"); err != nil {
-// 				log.Error(err, "could not run git fetch,", "data", string(output))
-// 				return
-// 			}
-// 			if output, err := execCmd(g.workspace, "git", "checkout", g.head); err != nil {
-// 				log.Error(err, "could not run git checkout,", "data", string(output))
-// 				return
-// 			}
-// 		}
-// 		if output, err := execCmd(g.workspace, "git", "pull"); err != nil {
-// 			log.Error(err, "could not run git pull,", "data", string(output))
-// 			return
-// 		}
-// 		workspace, err := filepath.Abs(path.Join(g.workspace, conf.Deploy.Test.WorkDir))
-// 		if err != nil {
-// 			log.Error(err, "Could not build path")
-// 			return
-// 		}
-// 		output, err = execCmd(workspace, conf.Deploy.Test.Command, conf.Deploy.Test.Args...)
-// 		for _, v := range strings.Split(string(output), "\n") {
-// 			log.Info(v)
-// 		}
-// 		if err != nil {
-// 			log.Error(err, "tests fail")
-// 			return
-// 		}
-// 		workspace, err = filepath.Abs(path.Join(g.workspace, conf.Trigger.Version.WorkDir))
-// 		if err != nil {
-// 			log.Error(err, "Could not build path")
-// 			return
-// 		}
-// 		output, err = execCmd(workspace, conf.Trigger.Version.Command, conf.Trigger.Version.Args...)
-// 		if err != nil {
-// 			log.Error(err, "could not get version")
-// 			return
-// 		}
-// 		re := regexp.MustCompile(`([0-9a-f]*)`)
-// 		match := re.FindStringSubmatch(string(output))
-// 		if len(match) < 2 {
-// 			log.Error(errors.New("wrongversion"), string(output))
-// 			return
-// 		}
-// 		version := match[1]
-// 		artipath := path.Join(g.gitRootPath, artifacts)
-// 		if err := os.Mkdir(artipath, os.ModeDir|os.ModePerm); err != nil && !os.IsExist(err) {
-// 			log.Error(err, "artipath directory creation failed", "data", artipath)
-// 			return
-// 		}
-// 		replaceVersion := regexp.MustCompile(`(\$\{version\})`)
-// 		exe := replaceVersion.ReplaceAllString("a", version)
-// 		artifact := path.Join(artipath, exe)
-// 		args := []string{}
-// 		for _, arg := range conf.Deploy.Build.Args {
-// 			replaceArtifact := regexp.MustCompile(`(\$\{artifact\})`)
-// 			args = append(args, replaceArtifact.ReplaceAllString(arg, artifact))
-// 		}
-// 		workspace, err = filepath.Abs(path.Join(g.workspace, conf.Deploy.Build.WorkDir))
-// 		if err != nil {
-// 			log.Error(err, "Could not build path")
-// 			return
-// 		}
-// 		output, err = execCmd(workspace, conf.Deploy.Build.Command, args...)
-// 		for _, v := range strings.Split(string(output), "\n") {
-// 			log.Info(v)
-// 		}
-// 		if err != nil {
-// 			log.Error(err, "build fail")
-// 			return
-// 		}
-// 		old, _ := g.upstream.GetDefault()
-// 		_, _, err = g.upstream.Lookup(exe + "/v1")
-// 		if err == nil {
-// 			log.Info("executable is already running", "data", exe)
-// 			return
-// 		}
-// 		addr, err := g.upstream.NextAddr()
-// 		if err != nil {
-// 			log.Error(err, "no address available")
-// 			return
-// 		}
-// 		cmd := exec.Command(artifact)
-// 		cmd.Env = []string{fmt.Sprintf("ADDR=%s", addr)}
-// 		log.Info("starting instance", "data", fmt.Sprintf("%s,%s", exe, addr))
-// 		g.upstream.Register(exe, "v1", HTTPProcess{Addr: addr, Cmd: cmd}, true)
-// 		cmd.Start()
-// 		if old == "" {
-// 			return
-// 		}
-// 		_, cmd, err = g.upstream.Lookup(old)
-// 		if err != nil {
-// 			return
-// 		}
-// 		cmd.Process.Kill()
-// 		key := strings.Split(old, "/")
-// 		if len(key) < 2 {
-// 			return
-// 		}
-// 		log.Info("stopping instance", "data", fmt.Sprintf("%s,%s", strings.Join(key[0:len(key)-1], "/"), key[len(key)-1]))
-// 		g.upstream.Unregister(strings.Join(key[0:len(key)-1], "/"), key[len(key)-1])
-// 	}
-// 	g.action <- f
-// }

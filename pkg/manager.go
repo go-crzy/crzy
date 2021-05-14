@@ -40,13 +40,13 @@ func Startup(version, commit, date, builtBy string) {
 		log.Error(err, "msg", "could not initialize GIT server")
 		return
 	}
-	listener1, err := NewHTTPListener(":8080")
+	listener1, err := run.newHTTPListener(":8080")
 	if err != nil {
 		log.Error(err, "msg", "could not start the GIT listener")
 		return
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	group.Go(func() error { return NewSignalHandler().Run(ctx, cancel) })
+	group.Go(func() error { return run.newSignalHandler().Run(ctx, cancel) })
 	group.Go(func() error { return listener1.Run(ctx, *gitServer.ghx) })
 	group.Go(func() error { return run.createAndStartWorkflows(ctx, gitCommand, trigger) })
 	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {

@@ -7,7 +7,10 @@ import (
 )
 
 func Test_NewHTTPListener(t *testing.T) {
-	v, err := NewHTTPListener(":8080")
+	r := &runContainer{
+		Log: &mockLogger{},
+	}
+	v, err := r.newHTTPListener(":8080")
 	if err != nil {
 		t.Error("should succeed")
 	}
