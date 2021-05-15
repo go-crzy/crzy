@@ -75,12 +75,13 @@ func (r *releaseWorkflow) killAll() error {
 }
 
 func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs map[string]string) error {
+	envs["port"] = port
 	process, err := command.runBackground(r.execdir, envs)
 	if err != nil {
 		return err
 	}
 	r.processes[port] = process
-	r.switchUpstream(port)
+	r.switchUpstream("localhost:" + port)
 	for k, v := range r.processes {
 		if k != port {
 			err := v.Kill()

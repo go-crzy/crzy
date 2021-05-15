@@ -13,7 +13,7 @@ import (
 )
 
 func Test_execCmd_and_succeed(t *testing.T) {
-	output, err := execCmd(".", "git", "version")
+	output, err := execCmd(".", map[string]string{}, "git", "version")
 	if err != nil {
 		t.Error("test fails", err)
 	}

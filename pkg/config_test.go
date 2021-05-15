@@ -36,7 +36,10 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			Run: execStruct{
 				Command: "./go-${version}",
 				WorkDir: ".",
-				Envs:    []envVar{{Name: "ADDR", Value: "localhost:${port}"}},
+				Envs: []envVar{
+					{Name: "ADDR", Value: "localhost:${port}"},
+					{Name: "PORT", Value: ":${port}"},
+				},
 			},
 			PortRange: portRangeStruct{
 				Min: 8090,

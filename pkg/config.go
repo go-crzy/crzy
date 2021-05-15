@@ -91,9 +91,16 @@ type execStruct struct {
 	Output  string
 }
 
-func execCmdBackground(dir string, name string, arg ...string) (*os.Process, error) {
+func execCmdBackground(dir string, envs map[string]string, name string, arg ...string) (*os.Process, error) {
 	c := exec.Command(name, arg...)
 	c.Dir = dir
+	if envs != nil && len(envs) > 0 {
+		vars := []string{}
+		for k, v := range envs {
+			vars = append(vars, fmt.Sprintf("%s=%s", k, v))
+		}
+		c.Env = vars
+	}
 	err := c.Start()
 	return c.Process, err
 }
@@ -114,8 +121,15 @@ func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, err
 		args = append(args, arg)
 		full = fmt.Sprintf("%s %s", full, arg)
 	}
+	for key, value := range envs {
+		value, err = replaceEnvs(value, envs)
+		if err != nil {
+			return nil, err
+		}
+		envs[key] = value
+	}
 	e.log.Info(full)
-	output, err := execCmd(dir, command, args...)
+	output, err := execCmd(dir, envs, command, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -145,8 +159,15 @@ func (e *execStruct) runBackground(workspace string, envs map[string]string) (*o
 		args = append(args, arg)
 		full = fmt.Sprintf("%s %s", full, arg)
 	}
+	for key, value := range envs {
+		value, err = replaceEnvs(value, envs)
+		if err != nil {
+			return nil, err
+		}
+		envs[key] = value
+	}
 	e.log.Info(full)
-	return execCmdBackground(dir, command, args...)
+	return execCmdBackground(dir, envs, command, args...)
 }
 
 func getConfig(lang string, configFile string) (*config, error) {

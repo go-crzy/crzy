@@ -34,3 +34,5 @@ release:
     envs:
     - name: ADDR
       value: "localhost:${port}"
+    - name: PORT
+      value: ":${port}"

@@ -15,9 +15,9 @@ func Test_newHTTPListener_and_success(t *testing.T) {
 	r := &runContainer{
 		Log: &mockLogger{},
 	}
-	v, err := r.newHTTPListener(":8080")
+	v, err := r.newHTTPListener(":8999")
 	if err != nil {
-		t.Error("should succeed")
+		t.Error("should succeed", err)
 	}
 	if v == nil {
 		t.Error("should not be nil")
