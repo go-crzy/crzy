@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path"
 	"runtime"
 	"strings"
@@ -89,6 +91,13 @@ type execStruct struct {
 	Output  string
 }
 
+func execCmdBackground(dir string, name string, arg ...string) (*os.Process, error) {
+	c := exec.Command(name, arg...)
+	c.Dir = dir
+	err := c.Start()
+	return c.Process, err
+}
+
 func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, error) {
 	dir := path.Join(workspace, e.WorkDir)
 	command, err := replaceEnvs(e.Command, envs)
@@ -118,6 +127,26 @@ func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, err
 		return &envVar{Name: e.Output, Value: results[0]}, nil
 	}
 	return nil, nil
+}
+
+func (e *execStruct) runBackground(workspace string, envs map[string]string) (*os.Process, error) {
+	dir := path.Join(workspace, e.WorkDir)
+	command, err := replaceEnvs(e.Command, envs)
+	if err != nil {
+		return nil, err
+	}
+	args := []string{}
+	full := command
+	for _, arg := range e.Args {
+		arg, err = replaceEnvs(arg, envs)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		full = fmt.Sprintf("%s %s", full, arg)
+	}
+	e.log.Info(full)
+	return execCmdBackground(dir, command, args...)
 }
 
 func getConfig(lang string, configFile string) (*config, error) {

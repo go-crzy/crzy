@@ -2,16 +2,19 @@ package pkg
 
 import (
 	"context"
+	"os"
 
 	"github.com/go-logr/logr"
 )
 
 type releaseWorkflow struct {
 	releaseStruct
-	execdir string
-	log     logr.Logger
-	keys    map[string]execStruct
-	flow    []string
+	execdir        string
+	log            logr.Logger
+	keys           map[string]execStruct
+	flow           string
+	processes      map[string]*os.Process
+	switchUpstream func(string)
 }
 
 func (w *releaseWorkflow) start(ctx context.Context, action <-chan event) error {
@@ -41,23 +44,51 @@ OUTER:
 					log.Error(err, "could not map envs")
 					continue OUTER
 				}
-				for _, v := range w.flow {
-					cmd := w.keys[v]
-					cmd.log = log
-					if cmd.Command == "" {
-						continue
-					}
-					log.Info("running...", "data", v)
-					_, err := (&cmd).run(w.execdir, m)
-					if err != nil {
-						log.Error(err, "execution error")
-						continue OUTER
-					}
+				cmd := w.keys[w.flow]
+				cmd.log = log
+				if cmd.Command == "" {
+					continue
+				}
+				err = w.switchProcesses(p, cmd, m)
+				if err != nil {
+					log.Error(err, "execution error")
+					continue OUTER
 				}
 				log.Info("release execution succeeded...")
 			}
 		case <-ctx.Done():
+			w.killAll()
 			return nil
 		}
 	}
+}
+
+func (r *releaseWorkflow) killAll() error {
+	for k, v := range r.processes {
+		err := v.Kill()
+		if err != nil {
+			return err
+		}
+		delete(r.processes, k)
+	}
+	return nil
+}
+
+func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs map[string]string) error {
+	process, err := command.runBackground(r.execdir, envs)
+	if err != nil {
+		return err
+	}
+	r.processes[port] = process
+	r.switchUpstream(port)
+	for k, v := range r.processes {
+		if k != port {
+			err := v.Kill()
+			if err != nil {
+				return err
+			}
+			delete(r.processes, k)
+		}
+	}
+	return nil
 }

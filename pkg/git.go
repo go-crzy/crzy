@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -103,35 +104,66 @@ func (git *defaultGitCommand) getExecdir() string {
 	return git.store.execDir
 }
 
-type mockGitCommand struct {
+type mockGitSuccessCommand struct {
 }
 
-func (git *mockGitCommand) initRepository() error {
+func (git *mockGitSuccessCommand) initRepository() error {
 	return nil
 }
 
-func (git *mockGitCommand) cloneRepository() error {
+func (git *mockGitSuccessCommand) cloneRepository() error {
 	return nil
 }
 
-func (git *mockGitCommand) getBin() string {
+func (git *mockGitSuccessCommand) getBin() string {
 	return "git"
 }
 
-func (git *mockGitCommand) getRepository() string {
+func (git *mockGitSuccessCommand) getRepository() string {
 	return "/repository"
 }
 
-func (git *mockGitCommand) getWorkspace() string {
+func (git *mockGitSuccessCommand) getWorkspace() string {
 	return "/workspace"
 }
 
-func (git *mockGitCommand) getExecdir() string {
+func (git *mockGitSuccessCommand) getExecdir() string {
 	return "/executions"
 }
 
-func (git *mockGitCommand) syncWorkspace(head string) error {
+func (git *mockGitSuccessCommand) syncWorkspace(head string) error {
 	return nil
+}
+
+type mockGitFailCommand struct {
+}
+
+func (git *mockGitFailCommand) initRepository() error {
+	return errors.New("error")
+}
+
+func (git *mockGitFailCommand) cloneRepository() error {
+	return errors.New("error")
+}
+
+func (git *mockGitFailCommand) getBin() string {
+	return "git"
+}
+
+func (git *mockGitFailCommand) getRepository() string {
+	return "/repository"
+}
+
+func (git *mockGitFailCommand) getWorkspace() string {
+	return "/workspace"
+}
+
+func (git *mockGitFailCommand) getExecdir() string {
+	return "/executions"
+}
+
+func (git *mockGitFailCommand) syncWorkspace(head string) error {
+	return errors.New("error")
 }
 
 type gitServer struct {

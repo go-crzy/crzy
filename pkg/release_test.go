@@ -11,6 +11,12 @@ import (
 func Test_ReleaseWorkflow(t *testing.T) {
 	release := &releaseWorkflow{
 		log: &mockLogger{},
+		releaseStruct: releaseStruct{
+			PortRange: portRangeStruct{
+				Min: 8090,
+				Max: 8100,
+			},
+		},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)

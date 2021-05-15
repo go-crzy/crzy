@@ -14,7 +14,7 @@ func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 		log:           &mockLogger{},
 		command:       &mockTriggerCommand{output: true},
 		head:          "main",
-		git:           &mockGitCommand{},
+		git:           &mockGitSuccessCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -48,7 +48,7 @@ func Test_VersionWorkflowWithFailure(t *testing.T) {
 		log:           &mockLogger{},
 		command:       command,
 		head:          "main",
-		git:           &mockGitCommand{},
+		git:           &mockGitSuccessCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
