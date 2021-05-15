@@ -95,3 +95,29 @@ func Test_getConfig_with_file_and_succeed(t *testing.T) {
 		t.Error("should be able to read file")
 	}
 }
+
+func Test_runBackground(t *testing.T) {
+	e := &execStruct{
+		log:     &mockLogger{},
+		Command: "tail",
+		Args:    []string{"-f", "config.go"},
+		WorkDir: ".",
+		Envs:    []envVar{},
+	}
+	if runtime.GOOS == "windows" {
+		e.Command = "powershell"
+		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
+	}
+	p, err := e.runBackground(".", map[string]string{})
+	if err != nil {
+		t.Error(err, "start failed")
+		t.FailNow()
+	}
+	if p == nil {
+		t.Error("process is empty")
+	}
+	err = p.Kill()
+	if err != nil {
+		t.Error(err, "kill failed")
+	}
+}

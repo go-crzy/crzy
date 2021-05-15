@@ -192,15 +192,12 @@ func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServe
 		r.Log.Error(err, "unable to create git server instance")
 		return nil, err
 	}
-	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {
-		// log.Info("prepare run service rpc upload.")
-	})
-	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {
-		// log.Info("prepare run service rpc receive.")
-	})
-	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {
-		// log.Info("after match routing.")
-	})
+	// prepare run service rpc upload.
+	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {})
+	// prepare run service rpc receive."
+	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {})
+	// after match routing.
+	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {})
 	if err := command.initRepository(); err != nil {
 		return nil, err
 	}
@@ -222,6 +219,10 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 		method := r.Method
 		if len(path) >= len(g.repoName)+1 && path[0:len(g.repoName)+1] == "/"+g.repoName {
 			r.URL.Path = path[len(g.repoName)+1:]
+		}
+		if path == r.URL.Path {
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		path = r.URL.Path
 		next.ServeHTTP(w, r)
