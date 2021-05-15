@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"context"
+	"path"
+	"runtime"
 	"testing"
 	"time"
 
@@ -98,5 +100,59 @@ func Test_versionCommand(t *testing.T) {
 	x, err := version.version()
 	if err != nil || x != "1" {
 		t.Error("version should succeed and return 1")
+	}
+}
+
+func Test_defaultTriggerCommand(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Dir(filename)
+	w := &triggerWorkflow{
+		triggerStruct: triggerStruct{
+			Version: versionStruct{
+				Command: "",
+				Args:    []string{},
+			},
+		},
+		git: &defaultGitCommand{
+			bin: "git",
+			store: store{
+				workdir: dir,
+			},
+			log: &mockLogger{},
+		},
+		log: &mockLogger{},
+	}
+	version := &defaultTriggerCommand{}
+	version.setTriggerWorkflow(*w)
+	x, err := version.version()
+	if err != nil || len(x) != 16 {
+		t.Error("version should be 16 length", x)
+	}
+}
+
+func Test_defaultTriggerCommand_with_error(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Dir(filename)
+	w := &triggerWorkflow{
+		triggerStruct: triggerStruct{
+			Version: versionStruct{
+				Command: "",
+				Args:    []string{},
+			},
+		},
+		git: &defaultGitCommand{
+			bin: "x",
+			store: store{
+				workdir: dir,
+			},
+			log: &mockLogger{},
+		},
+		log: &mockLogger{},
+	}
+	version := &defaultTriggerCommand{}
+	version.setTriggerWorkflow(*w)
+	_, err := version.version()
+	if err == nil || err.Error()[0:4] != "exec" {
+		t.Error("should return an error with execution", err)
 	}
 }
