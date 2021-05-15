@@ -23,7 +23,11 @@ func Test_ReleaseWorkflow(t *testing.T) {
 	startRelease := make(chan event)
 	defer close(startRelease)
 	g.Go(func() error { return release.start(ctx, startRelease) })
-	startRelease <- event{id: "start"}
+	startRelease <- event{
+		id: deployedMessage,
+		envs: []envVar{
+			{Name: "version", Value: "version"},
+		}}
 	time.Sleep(200 * time.Millisecond)
 	cancel()
 	if err := g.Wait(); err != nil && err.Error() != "context cancel" {
