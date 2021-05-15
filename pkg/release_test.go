@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_ReleaseWorkflow(t *testing.T) {
+func Test_releaseWorkflow(t *testing.T) {
 	release := &releaseWorkflow{
 		log: &mockLogger{},
 		releaseStruct: releaseStruct{

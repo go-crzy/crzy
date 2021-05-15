@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_TriggerWorkflowWithSuccess(t *testing.T) {
+func Test_triggerWorkflow_and_succeed(t *testing.T) {
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
 		log:           &mockLogger{},
@@ -41,7 +41,7 @@ func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 	}
 }
 
-func Test_VersionWorkflowWithFailure(t *testing.T) {
+func Test_versionWorkflow_and_fail(t *testing.T) {
 	command := &mockTriggerCommand{output: true}
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
@@ -79,7 +79,7 @@ func Test_VersionWorkflowWithFailure(t *testing.T) {
 	}
 }
 
-func Test_VersionCommand(t *testing.T) {
+func Test_versionCommand(t *testing.T) {
 	w := &triggerWorkflow{
 		triggerStruct: triggerStruct{
 			Version: versionStruct{

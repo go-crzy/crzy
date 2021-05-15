@@ -54,9 +54,9 @@ func Startup(version, commit, date, builtBy string) {
 		return
 	}
 	ctx, cancel := context.WithCancel(ctx)
-	group.Go(func() error { return run.newSignalHandler().Run(ctx, cancel) })
-	group.Go(func() error { return listener1.Run(ctx, *gitServer.ghx) })
-	group.Go(func() error { return listener2.Run(ctx, proxy) })
+	group.Go(func() error { return run.newSignalHandler().run(ctx, cancel) })
+	group.Go(func() error { return listener1.run(ctx, *gitServer.ghx) })
+	group.Go(func() error { return listener2.run(ctx, proxy) })
 	group.Go(func() error { return run.createAndStartWorkflows(ctx, gitCommand, trigger, f) })
 	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Error(err, "compute have stopped with error")

@@ -5,7 +5,7 @@ import (
 )
 
 // Test_StoreCreateAndDelete
-func Test_StoreCreateAndDelete(t *testing.T) {
+func Test_storeCreateAndDelete(t *testing.T) {
 	run := runContainer{
 		Log: &mockLogger{},
 	}
@@ -21,7 +21,7 @@ func Test_StoreCreateAndDelete(t *testing.T) {
 }
 
 // Test_StoreCreateAndDelete
-func Test_StoreDeleteAndFail(t *testing.T) {
+func Test_storeDelete_and_fail(t *testing.T) {
 	s := &store{
 		rootDir: "/doesnotexist",
 		log:     &mockLogger{},

@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_NewHTTPListener(t *testing.T) {
+func Test_newHTTPListener(t *testing.T) {
 	r := &runContainer{
 		Log: &mockLogger{},
 	}
@@ -26,13 +26,13 @@ func Test_NewHTTPListener(t *testing.T) {
 	}
 }
 
-func Test_LoggingMiddleware(t *testing.T) {
+func Test_loggingMiddleware(t *testing.T) {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("hello"))
 	})
-	server := httptest.NewServer(LoggingMiddleware(newCrzyLogger("demo", false), handler))
+	server := httptest.NewServer(loggingMiddleware(newCrzyLogger("demo", false), handler))
 	client := server.Client()
 
 	request, _ := http.NewRequest("Get", server.URL, nil)

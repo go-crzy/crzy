@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_WorkflowsAndCancel(t *testing.T) {
+func Test_workflowsAndCancel(t *testing.T) {
 	conf := config{
 		Deploy:  deployStruct{},
 		Trigger: triggerStruct{},
@@ -37,7 +37,7 @@ func Test_WorkflowsAndCancel(t *testing.T) {
 	}
 }
 
-func Test_WorkflowsAndFail(t *testing.T) {
+func Test_workflowsAndFail(t *testing.T) {
 	conf := config{
 		Deploy:  deployStruct{},
 		Trigger: triggerStruct{},

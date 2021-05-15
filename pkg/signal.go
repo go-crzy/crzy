@@ -22,7 +22,7 @@ func (r *runContainer) newSignalHandler() *signalHandler {
 	}
 }
 
-func (c *signalHandler) Run(ctx context.Context, cancel context.CancelFunc) error {
+func (c *signalHandler) run(ctx context.Context, cancel context.CancelFunc) error {
 	defer close(c.signalc)
 	log := c.log
 	log.Info("starting signal handler....")

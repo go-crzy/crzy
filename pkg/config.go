@@ -26,8 +26,8 @@ const (
 )
 
 var (
-	ErrUnsupportedLang   = errors.New("unsupportedlang")
-	ErrLoadingConfigFile = errors.New("loadingfile")
+	errUnsupportedLang   = errors.New("unsupportedlang")
+	errLoadingConfigFile = errors.New("loadingfile")
 )
 
 type config struct {
@@ -152,11 +152,11 @@ func (e *execStruct) runBackground(workspace string, envs map[string]string) (*o
 func getConfig(lang string, configFile string) (*config, error) {
 	conf, err := defaultConf(lang)
 	if err != nil {
-		return nil, ErrUnsupportedLang
+		return nil, errUnsupportedLang
 	}
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil && configFile != defaultConfigFile {
-		return nil, ErrLoadingConfigFile
+		return nil, errLoadingConfigFile
 	}
 	if err == nil {
 		yaml.Unmarshal(yamlFile, &conf)
@@ -175,6 +175,6 @@ func defaultConf(lang string) (*config, error) {
 		}
 		return conf, nil
 	default:
-		return nil, ErrUnsupportedLang
+		return nil, errUnsupportedLang
 	}
 }

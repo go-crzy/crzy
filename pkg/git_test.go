@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_execCmd(t *testing.T) {
+func Test_execCmd_and_succeed(t *testing.T) {
 	output, err := execCmd(".", "git", "version")
 	if err != nil {
 		t.Error("test fails", err)
@@ -16,7 +16,7 @@ func Test_execCmd(t *testing.T) {
 	}
 }
 
-func Test_cmdProcessKill(t *testing.T) {
+func Test_killProcess(t *testing.T) {
 	name := "tail"
 	args := []string{
 		"-f", "/dev/null",

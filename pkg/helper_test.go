@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_header(t *testing.T) {
+func Test_heading(t *testing.T) {
 	r := runContainer{
 		Log: &mockLogger{},
 	}

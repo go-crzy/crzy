@@ -211,7 +211,7 @@ func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServe
 		action:     action,
 		log:        log,
 	}
-	handler := LoggingMiddleware(r.Log.WithName("git"), server.captureAndTrigger(ghx))
+	handler := loggingMiddleware(r.Log.WithName("git"), server.captureAndTrigger(ghx))
 	server.ghx = &handler
 	return server, nil
 }

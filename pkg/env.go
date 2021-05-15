@@ -11,8 +11,8 @@ type envVar struct {
 }
 
 var (
-	ErrMissingEnv    = errors.New("missing")
-	ErrDuplicateKeys = errors.New("dupkeys")
+	errMissingEnv    = errors.New("missing")
+	errDuplicateKeys = errors.New("dupkeys")
 	envPattern       = regexp.MustCompile(`(\$\{[a-zA-Z0-9_]*\})`)
 )
 
@@ -25,7 +25,7 @@ func replaceEnvs(param string, envs map[string]string) (string, error) {
 		key := match[0][2 : len(match[0])-1]
 		val, ok := envs[key]
 		if !ok {
-			return "", ErrMissingEnv
+			return "", errMissingEnv
 		}
 		envPatternWithKey := regexp.MustCompile(`(\$\{` + key + `\})`)
 		param = envPatternWithKey.ReplaceAllString(param, val)
@@ -39,7 +39,7 @@ func groupEnvs(envs ...envVar) (map[string]string, error) {
 	keys := map[string]string{}
 	for _, v := range envs {
 		if _, ok := keys[v.Name]; ok {
-			return map[string]string{}, ErrDuplicateKeys
+			return map[string]string{}, errDuplicateKeys
 		}
 		keys[v.Name] = v.Value
 	}

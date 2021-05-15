@@ -58,14 +58,14 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 
 func Test_defaultConf_and_fail(t *testing.T) {
 	_, err := defaultConf("java")
-	if err != ErrUnsupportedLang {
+	if err != errUnsupportedLang {
 		t.Error("java should not be supported for now")
 	}
 }
 
 func Test_getConfig_and_fail(t *testing.T) {
 	_, err := getConfig("golang", "fail.yaml")
-	if err != ErrLoadingConfigFile {
+	if err != errLoadingConfigFile {
 		t.Error("loading the file should return an error")
 	}
 }
