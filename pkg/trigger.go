@@ -96,7 +96,7 @@ func (d *defaultTriggerCommand) setTriggerWorkflow(w triggerWorkflow) {
 func (d *defaultTriggerCommand) version() (string, error) {
 	log := d.trigger.log
 	if d.trigger.Version.Command == "" {
-		output, err := execCmd(d.trigger.git.getWorkspace(), map[string]string{}, d.trigger.git.getBin(), "log", "--format=%H", "-1", ".")
+		output, err := getCmd(d.trigger.git.getWorkspace(), map[string]string{}, d.trigger.git.getBin(), "log", "--format=%H", "-1", ".").CombinedOutput()
 		if err != nil {
 			log.Error(err, "could not get macro version")
 			return "", err
@@ -107,7 +107,7 @@ func (d *defaultTriggerCommand) version() (string, error) {
 		return string(output[0:16]), nil
 	}
 	workdir := path.Join(d.trigger.git.getWorkspace(), d.trigger.Version.WorkDir)
-	output, err := execCmd(workdir, map[string]string{}, d.trigger.Version.Command, d.trigger.Version.Args...)
+	output, err := getCmd(workdir, map[string]string{}, d.trigger.Version.Command, d.trigger.Version.Args...).CombinedOutput()
 	if err != nil {
 		log.Error(err, "could not get execution version")
 		return "", err

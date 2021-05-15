@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
@@ -12,20 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
 )
-
-func execCmd(dir string, envs map[string]string, name string, arg ...string) ([]byte, error) {
-	c := exec.Command(name, arg...)
-	c.Dir = dir
-	if envs != nil && len(envs) > 0 {
-		vars := []string{}
-		for k, v := range envs {
-			vars = append(vars, fmt.Sprintf("%s=%s", k, v))
-		}
-		c.Env = vars
-
-	}
-	return c.CombinedOutput()
-}
 
 type gitCommand interface {
 	initRepository() error
@@ -56,7 +41,7 @@ func (r *runContainer) newDefaultGitCommand(store store) (gitCommand, error) {
 }
 
 func (git *defaultGitCommand) initRepository() error {
-	if _, err := execCmd(git.store.repoDir, map[string]string{}, git.bin, "init", "--bare", "--shared"); err != nil {
+	if _, err := getCmd(git.store.repoDir, map[string]string{}, git.bin, "init", "--bare", "--shared").CombinedOutput(); err != nil {
 		git.log.Error(err, "could not initialize repository")
 		return err
 	}
@@ -64,7 +49,7 @@ func (git *defaultGitCommand) initRepository() error {
 }
 
 func (git *defaultGitCommand) cloneRepository() error {
-	if _, err := execCmd(git.store.workdir, map[string]string{}, git.bin, "clone", git.store.repoDir, "."); err != nil {
+	if _, err := getCmd(git.store.workdir, map[string]string{}, git.bin, "clone", git.store.repoDir, ".").CombinedOutput(); err != nil {
 		git.log.Error(err, "could not clone repository")
 		return err
 	}
@@ -80,17 +65,17 @@ func (git *defaultGitCommand) syncWorkspace(head string) error {
 	}
 	current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
 	if current != head {
-		if output, err := execCmd(git.store.workdir, map[string]string{}, "git", "fetch", "-p"); err != nil {
+		if output, err := getCmd(git.store.workdir, map[string]string{}, "git", "fetch", "-p").CombinedOutput(); err != nil {
 			log.Error(err, "could not run git fetch,", "data", string(output))
 			return err
 		}
-		if output, err := execCmd(git.store.workdir, map[string]string{}, "git", "checkout", head); err != nil {
+		if output, err := getCmd(git.store.workdir, map[string]string{}, "git", "checkout", head).CombinedOutput(); err != nil {
 			log.Error(err, "could not run git checkout,", "data", string(output))
 			return err
 		}
 		return nil
 	}
-	if output, err := execCmd(git.store.workdir, map[string]string{}, "git", "pull"); err != nil {
+	if output, err := getCmd(git.store.workdir, map[string]string{}, "git", "pull").CombinedOutput(); err != nil {
 		log.Error(err, "could not run git pull,", "data", string(output))
 		return err
 	}

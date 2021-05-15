@@ -5,42 +5,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"os/exec"
 	"path"
-	"runtime"
 	"strings"
 	"testing"
 )
-
-func Test_execCmd_and_succeed(t *testing.T) {
-	output, err := execCmd(".", map[string]string{}, "git", "version")
-	if err != nil {
-		t.Error("test fails", err)
-	}
-	if string(output[0:11]) != "git version" {
-		t.Errorf("output should be git version, current %q", output)
-	}
-}
-
-func Test_killProcess(t *testing.T) {
-	name := "tail"
-	args := []string{
-		"-f", "/dev/null",
-	}
-	if runtime.GOOS == "windows" {
-		name = "powershell"
-		args = []string{"-Command", "Get-Content cron.go -Wait"}
-	}
-	cmd := exec.Command(name, args...)
-	err := cmd.Start()
-	if err != nil {
-		t.Error(err, "start failed")
-	}
-	err = cmd.Process.Kill()
-	if err != nil {
-		t.Error(err, "kill failed")
-	}
-}
 
 func Test_newDefaultGitCommand(t *testing.T) {
 	store := store{
