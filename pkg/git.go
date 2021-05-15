@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -10,12 +11,6 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
 )
-
-func execCmd(dir string, name string, arg ...string) ([]byte, error) {
-	c := exec.Command(name, arg...)
-	c.Dir = dir
-	return c.CombinedOutput()
-}
 
 type gitCommand interface {
 	initRepository() error
@@ -46,7 +41,7 @@ func (r *runContainer) newDefaultGitCommand(store store) (gitCommand, error) {
 }
 
 func (git *defaultGitCommand) initRepository() error {
-	if _, err := execCmd(git.store.repoDir, git.bin, "init", "--bare", "--shared"); err != nil {
+	if _, err := getCmd(git.store.repoDir, map[string]string{}, git.bin, "init", "--bare", "--shared").CombinedOutput(); err != nil {
 		git.log.Error(err, "could not initialize repository")
 		return err
 	}
@@ -54,7 +49,7 @@ func (git *defaultGitCommand) initRepository() error {
 }
 
 func (git *defaultGitCommand) cloneRepository() error {
-	if _, err := execCmd(git.store.workdir, git.bin, "clone", git.store.repoDir, "."); err != nil {
+	if _, err := getCmd(git.store.workdir, map[string]string{}, git.bin, "clone", git.store.repoDir, ".").CombinedOutput(); err != nil {
 		git.log.Error(err, "could not clone repository")
 		return err
 	}
@@ -70,17 +65,17 @@ func (git *defaultGitCommand) syncWorkspace(head string) error {
 	}
 	current := strings.Join(strings.Split(strings.TrimSuffix(string(output), "\n"), "/")[2:], "/")
 	if current != head {
-		if output, err := execCmd(git.store.workdir, "git", "fetch", "-p"); err != nil {
+		if output, err := getCmd(git.store.workdir, map[string]string{}, "git", "fetch", "-p").CombinedOutput(); err != nil {
 			log.Error(err, "could not run git fetch,", "data", string(output))
 			return err
 		}
-		if output, err := execCmd(git.store.workdir, "git", "checkout", head); err != nil {
+		if output, err := getCmd(git.store.workdir, map[string]string{}, "git", "checkout", head).CombinedOutput(); err != nil {
 			log.Error(err, "could not run git checkout,", "data", string(output))
 			return err
 		}
 		return nil
 	}
-	if output, err := execCmd(git.store.workdir, "git", "pull"); err != nil {
+	if output, err := getCmd(git.store.workdir, map[string]string{}, "git", "pull").CombinedOutput(); err != nil {
 		log.Error(err, "could not run git pull,", "data", string(output))
 		return err
 	}
@@ -103,35 +98,66 @@ func (git *defaultGitCommand) getExecdir() string {
 	return git.store.execDir
 }
 
-type mockGitCommand struct {
+type mockGitSuccessCommand struct {
 }
 
-func (git *mockGitCommand) initRepository() error {
+func (git *mockGitSuccessCommand) initRepository() error {
 	return nil
 }
 
-func (git *mockGitCommand) cloneRepository() error {
+func (git *mockGitSuccessCommand) cloneRepository() error {
 	return nil
 }
 
-func (git *mockGitCommand) getBin() string {
+func (git *mockGitSuccessCommand) getBin() string {
 	return "git"
 }
 
-func (git *mockGitCommand) getRepository() string {
+func (git *mockGitSuccessCommand) getRepository() string {
 	return "/repository"
 }
 
-func (git *mockGitCommand) getWorkspace() string {
+func (git *mockGitSuccessCommand) getWorkspace() string {
 	return "/workspace"
 }
 
-func (git *mockGitCommand) getExecdir() string {
+func (git *mockGitSuccessCommand) getExecdir() string {
 	return "/executions"
 }
 
-func (git *mockGitCommand) syncWorkspace(head string) error {
+func (git *mockGitSuccessCommand) syncWorkspace(head string) error {
 	return nil
+}
+
+type mockGitFailCommand struct {
+}
+
+func (git *mockGitFailCommand) initRepository() error {
+	return errors.New("error")
+}
+
+func (git *mockGitFailCommand) cloneRepository() error {
+	return errors.New("error")
+}
+
+func (git *mockGitFailCommand) getBin() string {
+	return "git"
+}
+
+func (git *mockGitFailCommand) getRepository() string {
+	return "/repository"
+}
+
+func (git *mockGitFailCommand) getWorkspace() string {
+	return "/workspace"
+}
+
+func (git *mockGitFailCommand) getExecdir() string {
+	return "/executions"
+}
+
+func (git *mockGitFailCommand) syncWorkspace(head string) error {
+	return errors.New("error")
 }
 
 type gitServer struct {
@@ -160,15 +186,12 @@ func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServe
 		r.Log.Error(err, "unable to create git server instance")
 		return nil, err
 	}
-	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {
-		// log.Info("prepare run service rpc upload.")
-	})
-	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {
-		// log.Info("prepare run service rpc receive.")
-	})
-	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {
-		// log.Info("after match routing.")
-	})
+	// prepare run service rpc upload.
+	ghx.Event.On(githttpxfer.BeforeUploadPack, func(ctx githttpxfer.Context) {})
+	// prepare run service rpc receive."
+	ghx.Event.On(githttpxfer.BeforeReceivePack, func(ctx githttpxfer.Context) {})
+	// after match routing.
+	ghx.Event.On(githttpxfer.AfterMatchRouting, func(ctx githttpxfer.Context) {})
 	if err := command.initRepository(); err != nil {
 		return nil, err
 	}
@@ -179,7 +202,7 @@ func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServe
 		action:     action,
 		log:        log,
 	}
-	handler := LoggingMiddleware(r.Log.WithName("git"), server.captureAndTrigger(ghx))
+	handler := loggingMiddleware(r.Log.WithName("git"), server.captureAndTrigger(ghx))
 	server.ghx = &handler
 	return server, nil
 }
@@ -190,6 +213,10 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 		method := r.Method
 		if len(path) >= len(g.repoName)+1 && path[0:len(g.repoName)+1] == "/"+g.repoName {
 			r.URL.Path = path[len(g.repoName)+1:]
+		}
+		if path == r.URL.Path {
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		path = r.URL.Path
 		next.ServeHTTP(w, r)

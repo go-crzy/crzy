@@ -3,15 +3,51 @@ package pkg
 import (
 	"bytes"
 	"errors"
+	"os"
 	"testing"
 )
 
-func Test_NewCrzyLogger(t *testing.T) {
+func Test_newCrzyLogger_from_interface(t *testing.T) {
 	v := newCrzyLogger("main", false)
 	if v == nil {
 		t.Error("should not be nil")
 		t.FailNow()
 	}
+	if !v.Enabled() {
+		t.Error("should be enabled")
+	}
+	v.Info("hi", "data", "data")
+	v.Error(errors.New("error"), "error", "data", "data")
+	_ = v.V(2)
+	w := v.WithValues("data", "data")
+	w.Info("hello")
+	w = w.WithValues("msg", "msg")
+	w.Info("hello")
+	w = w.WithValues("msg", "msgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsgmsg")
+	w.Info("hello")
+	_ = v.WithName("main")
+}
+
+func Test_newCrzyLogger_from_crzyLogger(t *testing.T) {
+	c := crzyLogger{
+		color: true,
+		name:  "git",
+		out:   os.Stdout,
+	}
+	c.Info("hi", "data", "data")
+	d := crzyLogger{
+		color: true,
+		name:  "doesnotexist",
+		out:   os.Stdout,
+	}
+	d.Info("hi", "data", "data")
+}
+
+func Test_mockLogger(t *testing.T) {
+	c := mockLogger{}
+	_ = c.WithName("xxx")
+	_ = c.V(10)
+	_ = c.WithValues("data", "data")
 }
 
 func Test_colorPrint(t *testing.T) {

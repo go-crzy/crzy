@@ -2,19 +2,21 @@ package pkg
 
 import (
 	"context"
+	"path"
+	"runtime"
 	"testing"
 	"time"
 
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_TriggerWorkflowWithSuccess(t *testing.T) {
+func Test_triggerWorkflow_and_succeed(t *testing.T) {
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
 		log:           &mockLogger{},
 		command:       &mockTriggerCommand{output: true},
 		head:          "main",
-		git:           &mockGitCommand{},
+		git:           &mockGitSuccessCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -41,14 +43,14 @@ func Test_TriggerWorkflowWithSuccess(t *testing.T) {
 	}
 }
 
-func Test_VersionWorkflowWithFailure(t *testing.T) {
+func Test_versionWorkflow_and_fail(t *testing.T) {
 	command := &mockTriggerCommand{output: true}
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
 		log:           &mockLogger{},
 		command:       command,
 		head:          "main",
-		git:           &mockGitCommand{},
+		git:           &mockGitSuccessCommand{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -79,7 +81,7 @@ func Test_VersionWorkflowWithFailure(t *testing.T) {
 	}
 }
 
-func Test_VersionCommand(t *testing.T) {
+func Test_versionCommand(t *testing.T) {
 	w := &triggerWorkflow{
 		triggerStruct: triggerStruct{
 			Version: versionStruct{
@@ -98,5 +100,59 @@ func Test_VersionCommand(t *testing.T) {
 	x, err := version.version()
 	if err != nil || x != "1" {
 		t.Error("version should succeed and return 1")
+	}
+}
+
+func Test_defaultTriggerCommand(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Dir(filename)
+	w := &triggerWorkflow{
+		triggerStruct: triggerStruct{
+			Version: versionStruct{
+				Command: "",
+				Args:    []string{},
+			},
+		},
+		git: &defaultGitCommand{
+			bin: "git",
+			store: store{
+				workdir: dir,
+			},
+			log: &mockLogger{},
+		},
+		log: &mockLogger{},
+	}
+	version := &defaultTriggerCommand{}
+	version.setTriggerWorkflow(*w)
+	x, err := version.version()
+	if err != nil || len(x) != 16 {
+		t.Error("version should be 16 length", x)
+	}
+}
+
+func Test_defaultTriggerCommand_with_error(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	dir := path.Dir(filename)
+	w := &triggerWorkflow{
+		triggerStruct: triggerStruct{
+			Version: versionStruct{
+				Command: "",
+				Args:    []string{},
+			},
+		},
+		git: &defaultGitCommand{
+			bin: "x",
+			store: store{
+				workdir: dir,
+			},
+			log: &mockLogger{},
+		},
+		log: &mockLogger{},
+	}
+	version := &defaultTriggerCommand{}
+	version.setTriggerWorkflow(*w)
+	_, err := version.version()
+	if err == nil || err.Error()[0:4] != "exec" {
+		t.Error("should return an error with execution", err)
 	}
 }

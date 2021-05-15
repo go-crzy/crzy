@@ -7,7 +7,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func Test_DeployWorkflowWithSuccess(t *testing.T) {
+func Test_deployWorkflow_and_succeed(t *testing.T) {
 	deploy := &deployWorkflow{
 		log:          &mockLogger{},
 		deployStruct: deployStruct{},
@@ -48,7 +48,7 @@ func Test_DeployWorkflowWithSuccess(t *testing.T) {
 	}
 }
 
-func Test_DeployWorkflowWithFailure(t *testing.T) {
+func Test_deployWorkflow_and_fail(t *testing.T) {
 	deploy := &deployWorkflow{
 		log:          &mockLogger{},
 		deployStruct: deployStruct{},

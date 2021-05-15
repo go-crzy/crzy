@@ -1,6 +1,5 @@
 main:
   head: main
-  server: true
   color: true
   repository: color.git
   api_port: 8080

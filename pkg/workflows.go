@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"os"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -16,7 +17,7 @@ type event struct {
 	envs []envVar
 }
 
-func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger chan event) error {
+func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger chan event, switchUpstream func(string)) error {
 	err := git.cloneRepository()
 	if err != nil {
 		r.Log.Error(err, "error cloning repository")
@@ -47,6 +48,13 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
 		log:           r.Log,
+		execdir:       git.getExecdir(),
+		keys: map[string]execStruct{
+			"run": r.Config.Release.Run,
+		},
+		flow:           "run",
+		processes:      map[string]*os.Process{},
+		switchUpstream: switchUpstream,
 	}
 	startDeploy := make(chan event)
 	defer close(startDeploy)

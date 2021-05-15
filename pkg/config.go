@@ -3,14 +3,10 @@ package pkg
 import (
 	"embed"
 	"errors"
-	"fmt"
 	"io/ioutil"
-	"path"
 	"runtime"
-	"strings"
 	"sync"
 
-	"github.com/go-logr/logr"
 	"gopkg.in/yaml.v3"
 )
 
@@ -24,8 +20,8 @@ const (
 )
 
 var (
-	ErrUnsupportedLang   = errors.New("unsupportedlang")
-	ErrLoadingConfigFile = errors.New("loadingfile")
+	errUnsupportedLang   = errors.New("unsupportedlang")
+	errLoadingConfigFile = errors.New("loadingfile")
 )
 
 type config struct {
@@ -70,60 +66,24 @@ type versionStruct struct {
 	Envs    []envVar
 }
 
-type execStruct struct {
-	log     logr.Logger
-	Command string
-	Args    []string
-	WorkDir string
-	Envs    []envVar
-	Output  string
-}
-
-func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, error) {
-	dir := path.Join(workspace, e.WorkDir)
-	command, err := replaceEnvs(e.Command, envs)
-	if err != nil {
-		return nil, err
-	}
-	args := []string{}
-	full := command
-	for _, arg := range e.Args {
-		arg, err = replaceEnvs(arg, envs)
-		if err != nil {
-			return nil, err
-		}
-		args = append(args, arg)
-		full = fmt.Sprintf("%s %s", full, arg)
-	}
-	e.log.Info(full)
-	output, err := execCmd(dir, command, args...)
-	if err != nil {
-		return nil, err
-	}
-	results := strings.Split(string(output), "\n")
-	for _, v := range results {
-		e.log.Info(v)
-	}
-	if e.Output != "" {
-		return &envVar{Name: e.Output, Value: results[0]}, nil
-	}
-	return nil, nil
+type portRangeStruct struct {
+	Min int `yaml:"min"`
+	Max int `yaml:"max"`
 }
 
 type releaseStruct struct {
-	Type     string
-	Artifact artifactStruct
-	Run      execStruct
+	PortRange portRangeStruct `yaml:"port_range"`
+	Run       execStruct
 }
 
 func getConfig(lang string, configFile string) (*config, error) {
 	conf, err := defaultConf(lang)
 	if err != nil {
-		return nil, ErrUnsupportedLang
+		return nil, errUnsupportedLang
 	}
 	yamlFile, err := ioutil.ReadFile(configFile)
 	if err != nil && configFile != defaultConfigFile {
-		return nil, ErrLoadingConfigFile
+		return nil, errLoadingConfigFile
 	}
 	if err == nil {
 		yaml.Unmarshal(yamlFile, &conf)
@@ -137,11 +97,9 @@ func defaultConf(lang string) (*config, error) {
 		yamlFile, _ := langTemplate.ReadFile("templates/golang.yaml")
 		conf := &config{}
 		yaml.Unmarshal(yamlFile, conf)
-		if runtime.GOOS == "windows" {
-			conf.Release.Artifact.Extension = ".exe"
-		}
+		conf.Deploy.Artifact.Extension = map[string]string{"windows": ".exec"}[runtime.GOOS]
 		return conf, nil
 	default:
-		return nil, ErrUnsupportedLang
+		return nil, errUnsupportedLang
 	}
 }

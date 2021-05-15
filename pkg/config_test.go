@@ -28,11 +28,24 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			},
 			Test: execStruct{
 				Command: "go",
-				Args:    []string{"test", "./..."},
+				Args:    []string{"test", "-v", "./..."},
 				WorkDir: ".",
 			},
 		},
-	}
+		Release: releaseStruct{
+			Run: execStruct{
+				Command: "./go-${version}",
+				WorkDir: ".",
+				Envs: []envVar{
+					{Name: "ADDR", Value: "localhost:${port}"},
+					{Name: "PORT", Value: ":${port}"},
+				},
+			},
+			PortRange: portRangeStruct{
+				Min: 8090,
+				Max: 8100,
+			},
+		}}
 	if runtime.GOOS == "windows" {
 		_ = ".exe"
 	}
@@ -48,14 +61,21 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 
 func Test_defaultConf_and_fail(t *testing.T) {
 	_, err := defaultConf("java")
-	if err != ErrUnsupportedLang {
+	if err != errUnsupportedLang {
 		t.Error("java should not be supported for now")
 	}
 }
 
-func Test_getConfig_and_fail(t *testing.T) {
+func Test_getConfig_and_fail_java(t *testing.T) {
+	_, err := getConfig("java", "")
+	if err != errUnsupportedLang {
+		t.Error("java should not be supported for now")
+	}
+}
+
+func Test_getConfig_and_fail_golang(t *testing.T) {
 	_, err := getConfig("golang", "fail.yaml")
-	if err != ErrLoadingConfigFile {
+	if err != errLoadingConfigFile {
 		t.Error("loading the file should return an error")
 	}
 }

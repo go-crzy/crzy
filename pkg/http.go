@@ -28,7 +28,7 @@ func (r *runContainer) newHTTPListener(addr string) (*HTTPListener, error) {
 	}, nil
 }
 
-func (l *HTTPListener) Run(ctx context.Context, handler http.Handler) error {
+func (l *HTTPListener) run(ctx context.Context, handler http.Handler) error {
 	log := l.log
 	log.Info("starting HTTP listener", "data", l.lsnr.Addr().String())
 	go func(lsnr net.Listener) {
@@ -51,7 +51,7 @@ func (l *HTTPListener) Run(ctx context.Context, handler http.Handler) error {
 	}
 }
 
-func LoggingMiddleware(log logr.Logger, next http.Handler) http.Handler {
+func loggingMiddleware(log logr.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t1 := time.Now()
 		next.ServeHTTP(w, r)
