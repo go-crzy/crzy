@@ -19,16 +19,17 @@ type execStruct struct {
 	Output  string
 }
 
-func getCmd(dir string, envs map[string]string, name string, arg ...string) *exec.Cmd {
-	c := exec.Command(name, arg...)
+func getCmd(dir string, envs map[string]string, name string, args ...string) *exec.Cmd {
+	c := exec.Command(name, args...)
 	c.Dir = dir
 	if len(envs) > 0 {
-		vars := []string{}
+		vars := os.Environ()
 		for k, v := range envs {
 			vars = append(vars, fmt.Sprintf("%s=%s", k, v))
 		}
 		c.Env = vars
 	}
+	//fmt.Printf("dir:%s, cmd: %s, args: %v, envs: %v", dir, name, args, c.Env)
 	return c
 }
 
@@ -67,12 +68,12 @@ func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, err
 		return nil, err
 	}
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
 	results := strings.Split(string(output), "\n")
 	for _, v := range results {
 		e.log.Info(v)
+	}
+	if err != nil {
+		return nil, err
 	}
 	if e.Output != "" {
 		return &envVar{Name: e.Output, Value: results[0]}, nil

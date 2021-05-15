@@ -21,6 +21,7 @@ deploy:
     command: go
     args: 
     - test
+    - "-v"
     - "./..."
     workdir: "."
 

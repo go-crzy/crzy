@@ -28,7 +28,7 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			},
 			Test: execStruct{
 				Command: "go",
-				Args:    []string{"test", "./..."},
+				Args:    []string{"test", "-v", "./..."},
 				WorkDir: ".",
 			},
 		},
