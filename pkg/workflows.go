@@ -17,7 +17,12 @@ type event struct {
 	envs []envVar
 }
 
-func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitCommand, startTrigger chan event, switchUpstream func(string)) error {
+func (r *runContainer) createAndStartWorkflows(
+	ctx context.Context,
+	state *stateManager,
+	git gitCommand,
+	startTrigger chan event,
+	switchUpstream func(string)) error {
 	err := git.cloneRepository()
 	if err != nil {
 		r.Log.Error(err, "error cloning repository")
@@ -36,7 +41,8 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 			"pre_build": r.Config.Deploy.PreBuild,
 			"build":     r.Config.Deploy.Build,
 		},
-		flow: []string{"install", "test", "pre_build", "build"},
+		flow:  []string{"install", "test", "pre_build", "build"},
+		state: &stateDefaultClient{notifier: state.notifier},
 	}
 	trigger := &triggerWorkflow{
 		triggerStruct: r.Config.Trigger,
@@ -44,6 +50,7 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 		log:           r.Log,
 		git:           git,
 		command:       &defaultTriggerCommand{},
+		state:         &stateDefaultClient{notifier: state.notifier},
 	}
 	release := &releaseWorkflow{
 		releaseStruct: r.Config.Release,
@@ -55,11 +62,13 @@ func (r *runContainer) createAndStartWorkflows(ctx context.Context, git gitComma
 		flow:           "run",
 		processes:      map[string]*os.Process{},
 		switchUpstream: switchUpstream,
+		state:          &stateDefaultClient{notifier: state.notifier},
 	}
 	startDeploy := make(chan event)
 	defer close(startDeploy)
 	startRelease := make(chan event)
 	defer close(startRelease)
+	g.Go(func() error { return state.start(ctx) })
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
 	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startTrigger) })
 	g.Go(func() error { return release.start(ctx, startRelease) })

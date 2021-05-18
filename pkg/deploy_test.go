@@ -22,7 +22,8 @@ func Test_deployWorkflow_and_succeed(t *testing.T) {
 				Output:  "version",
 			},
 		},
-		flow: []string{"test"},
+		flow:  []string{"test"},
+		state: &stateMockClient{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -58,7 +59,8 @@ func Test_deployWorkflow_and_fail(t *testing.T) {
 				WorkDir: ".",
 			},
 		},
-		flow: []string{"test"},
+		flow:  []string{"test"},
+		state: &stateMockClient{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)

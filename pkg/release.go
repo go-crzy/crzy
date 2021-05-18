@@ -15,6 +15,7 @@ type releaseWorkflow struct {
 	flow           string
 	processes      map[string]*os.Process
 	switchUpstream func(string)
+	state          stateClient
 }
 
 func (w *releaseWorkflow) start(ctx context.Context, action <-chan event) error {

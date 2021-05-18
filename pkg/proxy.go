@@ -32,10 +32,13 @@ func newReverseProxy(u upstream) http.HandlerFunc {
 type defaultUpstream struct {
 	sync.RWMutex
 	defaultUpstream *string
+	state           *state
 }
 
-func newUpstream() upstream {
-	return &defaultUpstream{}
+func newUpstream(state *state) upstream {
+	return &defaultUpstream{
+		state: state,
+	}
 }
 
 // ErrServiceNotFound default service
@@ -47,6 +50,7 @@ var (
 type upstream interface {
 	setDefault(string)
 	getDefault() (string, error)
+	listVersions() []byte
 }
 
 // SetDefault an upstream server for a service version
@@ -66,6 +70,10 @@ func (u *defaultUpstream) getDefault() (string, error) {
 	return *u.defaultUpstream, nil
 }
 
+func (u *defaultUpstream) listVersions() []byte {
+	return u.state.listVersions()
+}
+
 type mockUpstream struct{}
 
 // setDefault an upstream server for a service version
@@ -75,4 +83,8 @@ func (u *mockUpstream) setDefault(name string) {
 // GetDefault an upstream server for a service version
 func (u *mockUpstream) getDefault() (string, error) {
 	return "", errServiceNotFound
+}
+
+func (u *mockUpstream) listVersions() []byte {
+	return []byte(`{"versions": ["123"]}`)
 }

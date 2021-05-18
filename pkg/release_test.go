@@ -17,6 +17,7 @@ func Test_releaseWorkflow(t *testing.T) {
 				Max: 8100,
 			},
 		},
+		state: &stateMockClient{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)

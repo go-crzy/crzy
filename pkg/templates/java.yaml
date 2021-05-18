@@ -1,0 +1,43 @@
+main:
+  head: main
+  color: true
+  repository: color.git
+  api_port: 8080
+  proxy_port: 8081
+
+deploy:
+  artifact:
+    filename: color-${version}.jar
+  install:
+    command: ant
+    args:
+    - download
+    workdir: "."
+  test:
+    command: ant
+    args: 
+    - build
+    workdir: "."
+    envs:
+    - name: PORT
+      value: "8101"
+  build:
+    command: cp
+    args:
+    - build/jar/color.jar
+    - ${artifact}
+    workdir: "."
+
+release:
+  port_range:
+    min: 8090
+    max: 8100
+  run:
+    command: java
+    args:
+    - "-jar"
+    - "${artifactFilename}"
+    workdir: "."
+    envs:
+    - name: PORT
+      value: "${port}"
