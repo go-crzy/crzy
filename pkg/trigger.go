@@ -17,6 +17,7 @@ type triggerWorkflow struct {
 	log     logr.Logger
 	git     gitCommand
 	command triggerCommand
+	state   stateClient
 }
 
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy chan<- event) error {
@@ -49,6 +50,10 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy
 						log.Error(err, "error during version of the repository")
 						continue
 					}
+					w.state.notifyStep(
+						version, "trigger",
+						runnerStatusDone,
+						step{execStruct: execStruct{Command: "version"}, Name: "version"})
 					// TODO: check the version does not exist yet, if it does not kick off the deploy
 					log.Info("version computed, deploying now...", "data", version)
 					deploying = true

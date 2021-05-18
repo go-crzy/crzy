@@ -15,6 +15,7 @@ type deployWorkflow struct {
 	log       logr.Logger
 	keys      map[string]execStruct
 	flow      []string
+	state     stateClient
 }
 
 func (w *deployWorkflow) start(ctx context.Context, action <-chan event, release, trigger chan<- event) error {

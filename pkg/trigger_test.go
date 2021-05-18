@@ -17,6 +17,7 @@ func Test_triggerWorkflow_and_succeed(t *testing.T) {
 		command:       &mockTriggerCommand{output: true},
 		head:          "main",
 		git:           &mockGitSuccessCommand{},
+		state:         &stateMockClient{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -51,6 +52,7 @@ func Test_versionWorkflow_and_fail(t *testing.T) {
 		command:       command,
 		head:          "main",
 		git:           &mockGitSuccessCommand{},
+		state:         &stateMockClient{},
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
@@ -94,6 +96,7 @@ func Test_versionCommand(t *testing.T) {
 				workdir: "/tmp",
 			},
 		},
+		state: &stateMockClient{},
 	}
 	version := &defaultTriggerCommand{}
 	version.setTriggerWorkflow(*w)
@@ -120,7 +123,8 @@ func Test_defaultTriggerCommand(t *testing.T) {
 			},
 			log: &mockLogger{},
 		},
-		log: &mockLogger{},
+		log:   &mockLogger{},
+		state: &stateMockClient{},
 	}
 	version := &defaultTriggerCommand{}
 	version.setTriggerWorkflow(*w)
@@ -147,7 +151,8 @@ func Test_defaultTriggerCommand_with_error(t *testing.T) {
 			},
 			log: &mockLogger{},
 		},
-		log: &mockLogger{},
+		log:   &mockLogger{},
+		state: &stateMockClient{},
 	}
 	version := &defaultTriggerCommand{}
 	version.setTriggerWorkflow(*w)
