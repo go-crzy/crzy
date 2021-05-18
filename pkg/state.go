@@ -2,13 +2,17 @@ package pkg
 
 import (
 	"context"
+	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/go-logr/logr"
 )
 
-const runnerStatusStarted = "started"
-const runnerStatusDone = "success"
+const (
+	runnerStatusStarted = "started"
+	runnerStatusDone    = "success"
+)
 
 type syntheticWorkflow struct {
 	Runners map[string]runner
@@ -35,14 +39,19 @@ type stepEvent struct {
 	workflowStatus string
 }
 
+type state struct {
+	sync.Mutex
+	state map[string]syntheticWorkflow
+}
+
 type stateManager struct {
-	notifier stateNotifier
-	state    map[string]syntheticWorkflow
+	notifier chan stepEvent
+	state    *state
 	log      logr.Logger
 }
 
 type stateDefaultClient struct {
-	notifier stateNotifier
+	notifier chan stepEvent
 }
 
 type stateClient interface {
@@ -50,10 +59,11 @@ type stateClient interface {
 }
 
 type stateMockClient struct {
-	notifier stateNotifier
 }
 
-type stateNotifier chan stepEvent
+type dataVersion struct {
+	Versions []string `json:"versions"`
+}
 
 func (a *stateDefaultClient) notifyStep(version, workflow, status string, step step) {
 	a.notifier <- stepEvent{
@@ -70,9 +80,48 @@ func (a *stateMockClient) notifyStep(version, workflow, status string, step step
 func (r *runContainer) newStateManager() *stateManager {
 	return &stateManager{
 		notifier: make(chan stepEvent),
-		state:    map[string]syntheticWorkflow{},
-		log:      r.Log.WithName("state"),
+		state: &state{
+			state: map[string]syntheticWorkflow{},
+		},
+		log: r.Log.WithName("state"),
 	}
+}
+
+func (s *state) addStep(stepEvent stepEvent) {
+	s.Lock()
+	defer s.Unlock()
+	version, ok := s.state[stepEvent.version]
+	if !ok {
+		version = syntheticWorkflow{
+			Runners: map[string]runner{},
+			Version: stepEvent.version,
+		}
+	}
+	workflow, ok := version.Runners[stepEvent.workflow]
+	if !ok {
+		workflow = runner{
+			Steps:  []step{},
+			Name:   stepEvent.workflow,
+			Status: stepEvent.workflowStatus,
+		}
+	}
+	workflow.Status = stepEvent.workflowStatus
+	workflow.Steps = append(workflow.Steps, stepEvent.step)
+	version.Runners[stepEvent.workflow] = workflow
+	s.state[stepEvent.version] = version
+}
+
+func (s *state) listVersions() []byte {
+	s.Lock()
+	defer s.Unlock()
+	data := dataVersion{
+		Versions: []string{},
+	}
+	for k := range s.state {
+		data.Versions = append(data.Versions, k)
+	}
+	output, _ := json.Marshal(&data)
+	return output
 }
 
 func (w *stateManager) start(ctx context.Context) error {
@@ -82,25 +131,7 @@ func (w *stateManager) start(ctx context.Context) error {
 	for {
 		select {
 		case stepEvent := <-w.notifier:
-			version, ok := w.state[stepEvent.version]
-			if !ok {
-				version = syntheticWorkflow{
-					Runners: map[string]runner{},
-					Version: stepEvent.version,
-				}
-			}
-			workflow, ok := version.Runners[stepEvent.workflow]
-			if !ok {
-				workflow = runner{
-					Steps:  []step{},
-					Name:   stepEvent.workflow,
-					Status: stepEvent.workflowStatus,
-				}
-			}
-			workflow.Status = stepEvent.workflowStatus
-			workflow.Steps = append(workflow.Steps, stepEvent.step)
-			version.Runners[stepEvent.workflow] = workflow
-			w.state[stepEvent.version] = version
+			w.state.addStep(stepEvent)
 		case <-ctx.Done():
 			log.Info("stopping state manager...")
 			return nil

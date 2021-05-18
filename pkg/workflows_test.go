@@ -29,7 +29,17 @@ func Test_workflowsAndCancel(t *testing.T) {
 	defer close(startTrigger)
 	git := &mockGitSuccessCommand{}
 	f := func(port string) {}
-	g.Go(func() error { return r.createAndStartWorkflows(ctx, git, startTrigger, f) })
+	g.Go(func() error {
+		return r.createAndStartWorkflows(ctx, &stateManager{
+			notifier: make(chan stepEvent),
+			log:      &mockLogger{},
+			state:    &state{},
+		},
+			git,
+			startTrigger,
+			f,
+		)
+	})
 	time.Sleep(500 * time.Microsecond)
 	cancel()
 	if err := g.Wait(); err != nil && err.Error() != "context canceled" {
@@ -56,7 +66,16 @@ func Test_workflowsAndFail(t *testing.T) {
 	defer close(startTrigger)
 	git := &mockGitFailCommand{}
 	f := func(port string) {}
-	err := r.createAndStartWorkflows(context.TODO(), git, startTrigger, f)
+	err := r.createAndStartWorkflows(
+		context.TODO(),
+		&stateManager{
+			notifier: make(chan stepEvent),
+			log:      &mockLogger{},
+			state:    &state{},
+		},
+		git,
+		startTrigger,
+		f)
 	if err == nil {
 		t.Error("should receive an error message")
 	}

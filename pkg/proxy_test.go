@@ -35,7 +35,7 @@ func Test_newReverseProxy_with_404(t *testing.T) {
 }
 
 func Test_defaultUpstream(t *testing.T) {
-	u := newUpstream()
+	u := newUpstream(&state{})
 	_, err := u.getDefault()
 	if err != errServiceNotFound {
 		t.Errorf("should returm errServiceNotFound, returns %v", err)

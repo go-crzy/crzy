@@ -27,6 +27,7 @@ func Startup(version, commit, date, builtBy string) {
 	if err != nil {
 		os.Exit(1)
 	}
+	state := run.newStateManager()
 	gitCommand, err := run.newDefaultGitCommand(*store)
 	if err != nil {
 		log.Error(err, "msg", "could not get GIT")
@@ -45,7 +46,7 @@ func Startup(version, commit, date, builtBy string) {
 		log.Error(err, "msg", "could not start the GIT listener")
 		return
 	}
-	upstream := newUpstream()
+	upstream := newUpstream(state.state)
 	f := func(port string) { upstream.setDefault(port) }
 	proxy := newReverseProxy(upstream)
 	listener2, err := run.newHTTPListener(":8081")
@@ -57,7 +58,7 @@ func Startup(version, commit, date, builtBy string) {
 	group.Go(func() error { return run.newSignalHandler().run(ctx, cancel) })
 	group.Go(func() error { return listener1.run(ctx, *gitServer.ghx) })
 	group.Go(func() error { return listener2.run(ctx, proxy) })
-	group.Go(func() error { return run.createAndStartWorkflows(ctx, gitCommand, trigger, f) })
+	group.Go(func() error { return run.createAndStartWorkflows(ctx, state, gitCommand, trigger, f) })
 	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Error(err, "compute have stopped with error")
 	}
