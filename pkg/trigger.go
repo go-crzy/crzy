@@ -36,15 +36,15 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy
 				triggered = true
 				if !deploying {
 					triggered = false
-					if firstsync {
-						firstsync = false
-						continue
-					}
 					err := w.git.syncWorkspace(w.head)
 					if err != nil {
+						if firstsync {
+							continue
+						}
 						log.Error(err, "error during sync of the repository")
 						continue
 					}
+					firstsync = false
 					version, err := command.version()
 					if err != nil {
 						log.Error(err, "error during version of the repository")
