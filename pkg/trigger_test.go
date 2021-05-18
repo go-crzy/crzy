@@ -27,24 +27,21 @@ func Test_triggerWorkflow_and_succeed(t *testing.T) {
 	defer close(startDeploy)
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
 	startTrigger <- event{id: triggeredMessage}
-	startTrigger <- event{id: triggeredMessage}
 	deploy := <-startDeploy
 	if deploy.id != triggeredMessage {
 		t.Error("deploy should start version")
 	}
-	startTrigger <- event{id: triggeredMessage}
 	startTrigger <- event{id: deployedMessage}
+	time.Sleep(200 * time.Microsecond)
+	startTrigger <- event{id: triggeredMessage}
 	deploy = <-startDeploy
-	if deploy.id != triggeredMessage {
-		t.Error("deploy should start version")
-	}
 	cancel()
 	if err := g.Wait(); err != nil && err.Error() != "context cancel" {
 		t.Error("should receive a context cancel message")
 	}
 }
 
-func Test_versionWorkflow_and_fail(t *testing.T) {
+func Test_triggerWorkflow_and_fail(t *testing.T) {
 	command := &mockTriggerCommand{output: true}
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
@@ -62,21 +59,23 @@ func Test_versionWorkflow_and_fail(t *testing.T) {
 	defer close(startDeploy)
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
 	startTrigger <- event{id: triggeredMessage}
-	time.Sleep(100 * time.Microsecond)
-	command.output = false
-	startTrigger <- event{id: triggeredMessage}
-	time.Sleep(100 * time.Microsecond)
-	command.output = true
-	startTrigger <- event{id: triggeredMessage}
 	deploy := <-startDeploy
 	if deploy.id != triggeredMessage {
 		t.Error("deploy should start version")
 	}
-	startTrigger <- event{id: triggeredMessage}
-	time.Sleep(100 * time.Microsecond)
+	startTrigger <- event{id: deployedMessage}
+	time.Sleep(200 * time.Microsecond)
 	command.output = false
+	startTrigger <- event{id: triggeredMessage}
+	command.output = true
+	deploy = <-startDeploy
+	startTrigger <- event{id: triggeredMessage}
+	if deploy.id != triggeredMessage {
+		t.Error("deploy should start version")
+	}
 	startTrigger <- event{id: deployedMessage}
 	time.Sleep(200 * time.Millisecond)
+	deploy = <-startDeploy
 	cancel()
 	if err := g.Wait(); err != nil && err.Error() != "context cancel" {
 		t.Error("should receive a context cancel message")
