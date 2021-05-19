@@ -211,7 +211,12 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		method := r.Method
-		if len(path) >= len(g.repoName)+1 && path[0:len(g.repoName)+1] == "/"+g.repoName {
+		if path == "/v0/version" && method == http.MethodGet {
+			api := api{}
+			api.ServeHTTP(w, r)
+			return
+		}
+		if len(path) >= len(g.repoName)+1 && path[:len(g.repoName)+1] == "/"+g.repoName {
 			r.URL.Path = path[len(g.repoName)+1:]
 		}
 		if path == r.URL.Path {

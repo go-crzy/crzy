@@ -97,7 +97,7 @@ func defaultConf(lang string) (*config, error) {
 		yamlFile, _ := langTemplate.ReadFile("templates/golang.yaml")
 		conf := &config{}
 		yaml.Unmarshal(yamlFile, conf)
-		conf.Deploy.Artifact.Extension = map[string]string{"windows": ".exec"}[runtime.GOOS]
+		conf.Deploy.Artifact.Extension = map[string]string{"windows": ".exe"}[runtime.GOOS]
 		return conf, nil
 	default:
 		return nil, errUnsupportedLang
