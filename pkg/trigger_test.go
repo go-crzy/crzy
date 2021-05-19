@@ -97,9 +97,11 @@ func Test_versionCommand(t *testing.T) {
 		state: &stateMockClient{},
 		log:   &mockLogger{},
 	}
-	w.triggerStruct.Version = versionStruct{
-		Command: "powershell",
-		Args:    []string{"-Command", "write-output 1"},
+	if runtime.GOOS == "windows" {
+		w.triggerStruct.Version = versionStruct{
+			Command: "powershell",
+			Args:    []string{"-Command", "write-output 1"},
+		}
 	}
 	version := &defaultTriggerCommand{}
 	version.setTriggerWorkflow(*w)

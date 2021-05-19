@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"runtime"
 	"testing"
 
 	"golang.org/x/sync/errgroup"
@@ -25,12 +26,14 @@ func Test_deployWorkflow_and_succeed(t *testing.T) {
 		flow:  []string{"test"},
 		state: &stateMockClient{},
 	}
-	deploy.keys["test"] = execStruct{
-		Command: "powershell",
-		Args:    []string{"-Command", "write-output version"},
-		WorkDir: ".",
-		Envs:    []envVar{{Name: "version", Value: "123"}},
-		Output:  "version"}
+	if runtime.GOOS == "windows" {
+		deploy.keys["test"] = execStruct{
+			Command: "powershell",
+			Args:    []string{"-Command", "write-output version"},
+			WorkDir: ".",
+			Envs:    []envVar{{Name: "version", Value: "123"}},
+			Output:  "version"}
+	}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
 	startDeploy := make(chan event)
