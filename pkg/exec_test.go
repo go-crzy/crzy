@@ -172,7 +172,10 @@ func Test_run_and_fail_combinedoutput(t *testing.T) {
 		Envs:    []envVar{},
 	}
 	_, err := e.run(".", map[string]string{})
-	if err == nil || err.Error() != "exec: \"doesnotexist\": executable file not found in $PATH" {
+	if err == nil ||
+		(err.Error() != "exec: \"doesnotexist\": executable file not found in $PATH" &&
+			err.Error() != "exec: \"doesnotexist\": executable file not found in %PATH%") {
+
 		t.Error(err, "should fail")
 	}
 }

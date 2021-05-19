@@ -47,7 +47,7 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			},
 		}}
 	if runtime.GOOS == "windows" {
-		_ = ".exe"
+		d.Deploy.Artifact.Extension = ".exe"
 	}
 	c, err := defaultConf("golang")
 	if err != nil {

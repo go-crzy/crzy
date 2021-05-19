@@ -40,7 +40,6 @@ func Test_triggerWorkflow_and_succeed(t *testing.T) {
 		t.Error("should receive a context cancel message")
 	}
 }
-
 func Test_triggerWorkflow_and_fail(t *testing.T) {
 	command := &mockTriggerCommand{output: true}
 	trigger := &triggerWorkflow{
@@ -92,16 +91,23 @@ func Test_versionCommand(t *testing.T) {
 		},
 		git: &defaultGitCommand{
 			store: store{
-				workdir: "/tmp",
+				workdir: ".",
 			},
 		},
 		state: &stateMockClient{},
+		log:   &mockLogger{},
+	}
+	if runtime.GOOS == "windows" {
+		w.triggerStruct.Version = versionStruct{
+			Command: "powershell",
+			Args:    []string{"-Command", "write-output 1"},
+		}
 	}
 	version := &defaultTriggerCommand{}
 	version.setTriggerWorkflow(*w)
 	x, err := version.version()
-	if err != nil || x != "1" {
-		t.Error("version should succeed and return 1")
+	if err != nil || x[0:1] != "1" {
+		t.Error("version should succeed and return 1|" + x + "|")
 	}
 }
 
