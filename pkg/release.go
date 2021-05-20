@@ -52,9 +52,18 @@ OUTER:
 				}
 				err = w.switchProcesses(p, cmd, m)
 				if err != nil {
+					w.state.notifyStep(
+						getEnv(action.envs, "version"), "release",
+						runnerStatusFailed,
+						step{execStruct: cmd, Name: w.flow})
 					log.Error(err, "execution error")
 					continue OUTER
 				}
+				w.state.notifyStep(
+					getEnv(action.envs, "version"), "release",
+					runnerStatusDone,
+					step{execStruct: cmd, Name: w.flow})
+				log.Error(err, "execution error")
 				log.Info("release execution succeeded...")
 			}
 		case <-ctx.Done():

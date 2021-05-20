@@ -20,6 +20,15 @@ type triggerWorkflow struct {
 	state   stateClient
 }
 
+func getEnv(e []envVar, name string) string {
+	for _, v := range e {
+		if v.Name == name {
+			return v.Value
+		}
+	}
+	return ""
+}
+
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy chan<- event) error {
 	log := w.log.WithName("trigger")
 	firstsync := true

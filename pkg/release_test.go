@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"context"
+	"os"
+	"runtime"
 	"testing"
 	"time"
 
@@ -16,9 +18,23 @@ func Test_releaseWorkflow(t *testing.T) {
 				Min: 8090,
 				Max: 8100,
 			},
+			Run: execStruct{
+				log:     &mockLogger{},
+				Command: "tail",
+				Args:    []string{"-f", "config.go"},
+				WorkDir: ".",
+				Envs:    []envVar{}},
 		},
-		state: &stateMockClient{},
+		state:          &stateMockClient{},
+		flow:           "run",
+		switchUpstream: func(string) {},
+		processes:      map[string]*os.Process{},
 	}
+	if runtime.GOOS == "windows" {
+		release.Run.Command = "powershell"
+		release.Run.Args = []string{"-Command", "Get-Content config.go -Wait"}
+	}
+	release.keys = map[string]execStruct{"run": release.releaseStruct.Run}
 	g, ctx := errgroup.WithContext(context.TODO())
 	ctx, cancel := context.WithCancel(ctx)
 	startRelease := make(chan event)

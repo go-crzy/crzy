@@ -11,6 +11,7 @@ import (
 
 const (
 	runnerStatusStarted = "started"
+	runnerStatusFailed  = "failure"
 	runnerStatusDone    = "success"
 )
 
