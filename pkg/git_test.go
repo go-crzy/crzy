@@ -70,7 +70,7 @@ func Test_newGitServer(t *testing.T) {
 		Config: config{},
 	}
 	action := make(chan event)
-	_, err = r.newGitServer(store, &stateMockClient{}, action)
+	_, err = r.newGitServer(store, &stateManager{}, action)
 	if err != nil {
 		t.Error("should succeed", err)
 	}
@@ -183,6 +183,40 @@ func Test_captureAndTrigger_and_event(t *testing.T) {
 	val := <-action
 	if val.id != triggeredMessage {
 		t.Error("should trigger an action")
+	}
+}
+
+func Test_captureAndTrigger_and_api(t *testing.T) {
+	action := make(chan event, 1)
+	g := &gitServer{
+		action:   action,
+		repoName: "color.git",
+		state:    &stateManager{},
+	}
+	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("ok"))
+	})
+	h := g.captureAndTrigger(next)
+	server := httptest.NewServer(h)
+	client := server.Client()
+
+	request, _ := http.NewRequest("GET", server.URL+"/v0/version", nil)
+	response, err := client.Do(request)
+	if err != nil {
+		t.Errorf("Should not return %v", err)
+	}
+	if response.StatusCode != http.StatusOK {
+		t.Errorf(
+			"Status Code should be 200, current: %d",
+			response.StatusCode,
+		)
+	}
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Error("body conversion should succeed")
+	}
+	if string(b) != `version` {
+		t.Errorf("message should be version, >%s<", string(b))
 	}
 }
 

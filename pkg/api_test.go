@@ -9,12 +9,12 @@ import (
 
 func TestApiServer(t *testing.T) {
 	handler := &api{
-		state: &stateMockClient{},
+		state: &stateManager{},
 	}
 	server := httptest.NewServer(handler)
 	client := server.Client()
 
-	request, _ := http.NewRequest("Get", server.URL, nil)
+	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/version", nil)
 	response, err := client.Do(request)
 	if err != nil {
 		t.Errorf("Should not return %v", err)

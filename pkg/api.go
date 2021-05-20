@@ -1,11 +1,21 @@
 package pkg
 
-import "net/http"
+import (
+	"net/http"
+)
 
 type api struct {
-	state stateClient
+	state *stateManager
 }
 
 func (h api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("version"))
+	path := r.URL.Path
+	method := r.Method
+	if path == "/v0/version" && method == http.MethodGet {
+		// api := api{state: h.state}
+		// api.ServeHTTP(w, r)
+		// return
+		w.Write([]byte("version"))
+	}
+	// _ = h.state.state.listVersions()
 }
