@@ -167,10 +167,10 @@ type gitServer struct {
 	ghx        *http.Handler
 	action     chan<- event
 	log        logr.Logger
-	state      stateClient
+	state      *stateManager
 }
 
-func (r *runContainer) newGitServer(store store, state stateClient, action chan<- event) (*gitServer, error) {
+func (r *runContainer) newGitServer(store store, state *stateManager, action chan<- event) (*gitServer, error) {
 	log := r.Log.WithName("git")
 	command, err := r.newDefaultGitCommand(store)
 	if err != nil {
@@ -213,8 +213,8 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		method := r.Method
-		if path == "/v0/version" && method == http.MethodGet {
-			api := api{}
+		if len(path) >= 3 && path[:3] == "/v0" {
+			api := api{state: g.state}
 			api.ServeHTTP(w, r)
 			return
 		}
