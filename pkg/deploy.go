@@ -69,13 +69,21 @@ OUTER:
 					}
 					log.Info("running...", "data", v)
 					e, err := (&cmd).run(w.workspace, m)
-					if err == nil && e != nil {
-						vars = append(vars, *e)
-					}
 					if err != nil {
+						w.state.notifyStep(
+							getEnv(action.envs, "version"), "deploy",
+							runnerStatusFailed,
+							step{execStruct: cmd, Name: v})
 						log.Error(err, "execution error")
 						trigger <- event{id: deployedMessage}
 						continue OUTER
+					}
+					w.state.notifyStep(
+						getEnv(action.envs, "version"), "deploy",
+						runnerStatusDone,
+						step{execStruct: cmd, Name: v})
+					if e != nil {
+						vars = append(vars, *e)
 					}
 				}
 				log.Info("deploy execution succeeded...")

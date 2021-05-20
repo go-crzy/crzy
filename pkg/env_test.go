@@ -4,6 +4,22 @@ import (
 	"testing"
 )
 
+func Test_getEnv_succeed(t *testing.T) {
+	e := []envVar{{Name: "version", Value: "123"}}
+	out := getEnv(e, "version")
+	if out != "123" {
+		t.Error("getEnv should return 123")
+	}
+}
+
+func Test_getEnv_failed(t *testing.T) {
+	e := []envVar{{Name: "version", Value: "123"}}
+	out := getEnv(e, "release")
+	if out != "" {
+		t.Error("getEnv should return an empty string")
+	}
+}
+
 func Test_replaceEnv_and_succeed(t *testing.T) {
 	input := []string{`abc-${version}-${x}`, `abc-${version}`, `${version}`}
 	envs := map[string]string{"version": "123", "x": "abc"}
