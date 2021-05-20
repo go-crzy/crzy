@@ -70,7 +70,7 @@ func Test_newGitServer(t *testing.T) {
 		Config: config{},
 	}
 	action := make(chan event)
-	_, err = r.newGitServer(store, action)
+	_, err = r.newGitServer(store, &stateMockClient{}, action)
 	if err != nil {
 		t.Error("should succeed", err)
 	}

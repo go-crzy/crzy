@@ -8,7 +8,9 @@ import (
 )
 
 func TestApiServer(t *testing.T) {
-	handler := &api{}
+	handler := &api{
+		state: &stateMockClient{},
+	}
 	server := httptest.NewServer(handler)
 	client := server.Client()
 
@@ -28,6 +30,6 @@ func TestApiServer(t *testing.T) {
 		t.Errorf("Should not return %v", err)
 	}
 	if string(body) != "version" {
-		t.Errorf("Expecting version, get: %s",string(body))
+		t.Errorf("Expecting version, get: %s", string(body))
 	}
 }
