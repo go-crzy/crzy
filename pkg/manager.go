@@ -36,7 +36,7 @@ func Startup(version, commit, date, builtBy string) {
 	defer store.delete()
 	trigger := make(chan event)
 	defer close(trigger)
-	gitServer, err := run.newGitServer(*store, trigger)
+	gitServer, err := run.newGitServer(*store, &stateDefaultClient{notifier: state.notifier}, trigger)
 	if err != nil {
 		log.Error(err, "msg", "could not initialize GIT server")
 		return

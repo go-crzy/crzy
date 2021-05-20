@@ -167,9 +167,10 @@ type gitServer struct {
 	ghx        *http.Handler
 	action     chan<- event
 	log        logr.Logger
+	state      stateClient
 }
 
-func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServer, error) {
+func (r *runContainer) newGitServer(store store, state stateClient, action chan<- event) (*gitServer, error) {
 	log := r.Log.WithName("git")
 	command, err := r.newDefaultGitCommand(store)
 	if err != nil {
@@ -201,6 +202,7 @@ func (r *runContainer) newGitServer(store store, action chan<- event) (*gitServe
 		gitCommand: command,
 		action:     action,
 		log:        log,
+		state:      state,
 	}
 	handler := loggingMiddleware(r.Log.WithName("git"), server.captureAndTrigger(ghx))
 	server.ghx = &handler
