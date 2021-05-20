@@ -9,7 +9,7 @@ import (
 
 func TestApiServer(t *testing.T) {
 	handler := &api{
-		state: &stateManager{},
+		state: &stateManager{state: &mockState{}},
 	}
 	server := httptest.NewServer(handler)
 	client := server.Client()
