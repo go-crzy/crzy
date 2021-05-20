@@ -33,7 +33,7 @@ func Test_workflowsAndCancel(t *testing.T) {
 		return r.createAndStartWorkflows(ctx, &stateManager{
 			notifier: make(chan stepEvent),
 			log:      &mockLogger{},
-			state:    &state{},
+			state:    &defaultState{},
 		},
 			git,
 			startTrigger,
@@ -71,7 +71,7 @@ func Test_workflowsAndFail(t *testing.T) {
 		&stateManager{
 			notifier: make(chan stepEvent),
 			log:      &mockLogger{},
-			state:    &state{},
+			state:    &defaultState{},
 		},
 		git,
 		startTrigger,

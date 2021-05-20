@@ -8,6 +8,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+type mockState struct{}
+
+func (m *mockState) listVersions() []byte {
+	return []byte(`{"versions": ["123"]}`)
+}
+
+func (m *mockState) addStep(stepEvent) {
+
+}
+
 func Test_newStateManager(t *testing.T) {
 	r := &runContainer{
 		Log: &mockLogger{},

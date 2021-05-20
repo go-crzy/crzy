@@ -40,14 +40,19 @@ type stepEvent struct {
 	workflowStatus string
 }
 
-type state struct {
+type state interface {
+	listVersions() []byte
+	addStep(stepEvent)
+}
+
+type defaultState struct {
 	sync.Mutex
 	state map[string]syntheticWorkflow
 }
 
 type stateManager struct {
 	notifier chan stepEvent
-	state    *state
+	state    state
 	log      logr.Logger
 }
 
@@ -81,14 +86,14 @@ func (a *stateMockClient) notifyStep(version, workflow, status string, step step
 func (r *runContainer) newStateManager() *stateManager {
 	return &stateManager{
 		notifier: make(chan stepEvent),
-		state: &state{
+		state: &defaultState{
 			state: map[string]syntheticWorkflow{},
 		},
 		log: r.Log.WithName("state"),
 	}
 }
 
-func (s *state) addStep(stepEvent stepEvent) {
+func (s *defaultState) addStep(stepEvent stepEvent) {
 	s.Lock()
 	defer s.Unlock()
 	version, ok := s.state[stepEvent.version]
@@ -112,7 +117,7 @@ func (s *state) addStep(stepEvent stepEvent) {
 	s.state[stepEvent.version] = version
 }
 
-func (s *state) listVersions() []byte {
+func (s *defaultState) listVersions() []byte {
 	s.Lock()
 	defer s.Unlock()
 	data := dataVersion{

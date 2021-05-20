@@ -9,13 +9,12 @@ type api struct {
 }
 
 func (h api) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	method := r.Method
-	if path == "/v0/version" && method == http.MethodGet {
-		// api := api{state: h.state}
-		// api.ServeHTTP(w, r)
-		// return
-		w.Write([]byte("version"))
+	if r.Method == http.MethodGet {
+		switch r.URL.Path {
+		case "/v0/version":
+			w.Write([]byte("version"))
+		case "/v0/versions":
+			w.Write([]byte(h.state.state.listVersions()))
+		}
 	}
-	// _ = h.state.state.listVersions()
 }

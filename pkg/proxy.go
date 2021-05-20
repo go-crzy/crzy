@@ -32,10 +32,10 @@ func newReverseProxy(u upstream) http.HandlerFunc {
 type defaultUpstream struct {
 	sync.RWMutex
 	defaultUpstream *string
-	state           *state
+	state           state
 }
 
-func newUpstream(state *state) upstream {
+func newUpstream(state state) upstream {
 	return &defaultUpstream{
 		state: state,
 	}

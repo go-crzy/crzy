@@ -191,7 +191,7 @@ func Test_captureAndTrigger_and_api(t *testing.T) {
 	g := &gitServer{
 		action:   action,
 		repoName: "color.git",
-		state:    &stateManager{},
+		state:    &stateManager{state: &mockState{}},
 	}
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("ok"))
