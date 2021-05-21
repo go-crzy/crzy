@@ -91,14 +91,13 @@ func getConfig(lang string, configFile string) (*config, error) {
 	return conf, nil
 }
 
-func defaultConf(lang string) (*config, error) {
+func defaultConf(lang string) (conf *config, err error) {
 	switch lang {
 	case golangLanguage:
 		yamlFile, _ := langTemplate.ReadFile("templates/golang.yaml")
-		conf := &config{}
 		yaml.Unmarshal(yamlFile, conf)
 		conf.Deploy.Artifact.Extension = map[string]string{"windows": ".exe"}[runtime.GOOS]
-		return conf, nil
+		return
 	default:
 		return nil, errUnsupportedLang
 	}

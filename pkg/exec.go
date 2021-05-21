@@ -15,34 +15,33 @@ type execStruct struct {
 	Command string
 	Args    []string
 	WorkDir string
-	Envs    []envVar
+	Envs    envVars
 	Output  string
 }
 
-func getCmd(dir string, envs map[string]string, name string, args ...string) *exec.Cmd {
+func getCmd(dir string, envs envVars, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
 	if len(envs) > 0 {
 		vars := os.Environ()
-		for k, v := range envs {
-			vars = append(vars, fmt.Sprintf("%s=%s", k, v))
+		for _, e := range envs {
+			vars = append(vars, fmt.Sprintf("%s=%s", e.Name, e.Value))
 		}
 		c.Env = vars
 	}
-	//fmt.Printf("dir:%s, cmd: %s, args: %v, envs: %v", dir, name, args, c.Env)
 	return c
 }
 
-func (e *execStruct) prepare(workspace string, envs map[string]string) (*exec.Cmd, error) {
+func (e *execStruct) prepare(workspace string, envs envVars) (*exec.Cmd, error) {
 	dir := path.Join(workspace, e.WorkDir)
-	command, err := replaceEnvs(e.Command, envs)
+	command, err := envs.replace(e.Command)
 	if err != nil {
 		return nil, err
 	}
 	args := []string{}
 	full := command
 	for _, arg := range e.Args {
-		arg, err = replaceEnvs(arg, envs)
+		arg, err = envs.replace(arg)
 		if err != nil {
 			return nil, err
 		}
@@ -50,19 +49,17 @@ func (e *execStruct) prepare(workspace string, envs map[string]string) (*exec.Cm
 		full = fmt.Sprintf("%s %s", full, arg)
 	}
 	for _, value := range e.Envs {
-		if _, ok := envs[value.Name]; !ok {
-			v, err := replaceEnvs(value.Value, envs)
-			if err != nil {
+		if v := envs.get(value.Name); v == "" {
+			if _, err := envs.replace(value.Value); err != nil {
 				return nil, err
 			}
-			envs[value.Name] = v
 		}
 	}
 	e.log.Info(full)
 	return getCmd(dir, envs, command, args...), nil
 }
 
-func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, error) {
+func (e *execStruct) run(workspace string, envs envVars) (*envVar, error) {
 	cmd, err := e.prepare(workspace, envs)
 	if err != nil {
 		return nil, err
@@ -81,7 +78,7 @@ func (e *execStruct) run(workspace string, envs map[string]string) (*envVar, err
 	return nil, nil
 }
 
-func (e *execStruct) runBackground(workspace string, envs map[string]string) (*os.Process, error) {
+func (e *execStruct) runBackground(workspace string, envs envVars) (*os.Process, error) {
 	cmd, err := e.prepare(workspace, envs)
 	if err != nil {
 		return nil, err

@@ -20,15 +20,6 @@ type triggerWorkflow struct {
 	state   stateClient
 }
 
-func getEnv(e []envVar, name string) string {
-	for _, v := range e {
-		if v.Name == name {
-			return v.Value
-		}
-	}
-	return ""
-}
-
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy chan<- event) error {
 	log := w.log.WithName("trigger")
 	firstsync := true
@@ -113,7 +104,7 @@ func (d *defaultTriggerCommand) setTriggerWorkflow(w triggerWorkflow) {
 func (d *defaultTriggerCommand) version() (string, error) {
 	log := d.trigger.log
 	if d.trigger.Version.Command == "" {
-		output, err := getCmd(d.trigger.git.getWorkspace(), map[string]string{}, d.trigger.git.getBin(), "log", "--format=%H", "-1", ".").CombinedOutput()
+		output, err := getCmd(d.trigger.git.getWorkspace(), envVars{}, d.trigger.git.getBin(), "log", "--format=%H", "-1", ".").CombinedOutput()
 		if err != nil {
 			log.Error(err, "could not get macro version")
 			return "", err
@@ -124,7 +115,7 @@ func (d *defaultTriggerCommand) version() (string, error) {
 		return string(output[0:16]), nil
 	}
 	workdir := path.Join(d.trigger.git.getWorkspace(), d.trigger.Version.WorkDir)
-	output, err := getCmd(workdir, map[string]string{}, d.trigger.Version.Command, d.trigger.Version.Args...).CombinedOutput()
+	output, err := getCmd(workdir, envVars{}, d.trigger.Version.Command, d.trigger.Version.Args...).CombinedOutput()
 	if err != nil {
 		log.Error(err, "could not get execution version")
 		return "", err

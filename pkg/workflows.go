@@ -14,7 +14,7 @@ const (
 
 type event struct {
 	id   string
-	envs []envVar
+	envs envVars
 }
 
 func (r *runContainer) createAndStartWorkflows(
