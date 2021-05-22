@@ -63,7 +63,6 @@ OUTER:
 					getEnv(action.envs, "version"), "release",
 					runnerStatusDone,
 					step{execStruct: cmd, Name: w.flow})
-				log.Error(err, "execution error")
 				log.Info("release execution succeeded...")
 			}
 		case <-ctx.Done():
