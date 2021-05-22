@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -44,10 +45,16 @@ func (c *crzyLogger) Info(msg string, keysAndValues ...interface{}) {
 func (c *crzyLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	switch len(keysAndValues) {
 	case 0:
+		if err == nil {
+			err = errors.New("unknown")
+		}
 		c.Log("error", "err:"+err.Error(), "msg", msg)
 	default:
 		keysAndValues = append(keysAndValues, "msg")
 		keysAndValues = append(keysAndValues, msg)
+		if err == nil {
+			err = errors.New("unknown")
+		}
 		c.Log("error", "err:"+err.Error(), keysAndValues...)
 	}
 }
