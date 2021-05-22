@@ -56,6 +56,7 @@ func (w *deployWorkflow) start(ctx context.Context, action <-chan event, release
 				vars.addOne("artifact", artifact)
 
 				if err := w.startFlows(action, &vars); err != nil {
+					trigger <- event{id: deployedMessage}
 					continue
 				}
 				log.Info("deploy execution succeeded...")
