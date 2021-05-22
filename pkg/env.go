@@ -20,10 +20,10 @@ var (
 
 func newEnvVars(evs ...envVar) envVars { return append(envVars{}, evs...) }
 
-func (evs envVars) add(e ...envVar) { evs = append(evs, e...) }
+func (evs *envVars) add(e ...envVar) { *evs = append(*evs, e...) }
 
-func (evs envVars) addOne(n, v string) {
-	evs = append(evs, envVar{Name: n, Value: v})
+func (evs *envVars) addOne(n, v string) {
+	*evs = append(*evs, envVar{Name: n, Value: v})
 }
 
 func (evs envVars) get(name string) string {
