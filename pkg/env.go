@@ -26,8 +26,8 @@ func (evs *envVars) addOne(n, v string) {
 	*evs = append(*evs, envVar{Name: n, Value: v})
 }
 
-func (evs envVars) get(name string) string {
-	for _, v := range evs {
+func (evs *envVars) get(name string) string {
+	for _, v := range *evs {
 		if v.Name == name {
 			return v.Value
 		}
@@ -38,7 +38,7 @@ func (evs envVars) get(name string) string {
 // replaceEnvs replaces variables identified with ${} in param with their
 // values picked from the envs map. If one value is missing, it returns the
 // ErrMissingEnv error.
-func (evs envVars) replace(param string) (string, error) {
+func (evs *envVars) replace(param string) (string, error) {
 	envs, err := evs.toMap()
 	if err != nil {
 		return "", err
