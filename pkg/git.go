@@ -210,12 +210,16 @@ func (r *runContainer) newGitServer(store store, state *stateManager, action cha
 }
 
 func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
+	
+	mux := http.NewServeMux()
+	mux.Handle("/v0/version", &versionHandler{})
+	mux.Handle("/v0/versions", &versionsHandler{state: g.state})
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		method := r.Method
 		if len(path) >= 3 && path[:3] == "/v0" {
-			api := api{state: g.state}
-			api.ServeHTTP(w, r)
+			mux.ServeHTTP(w, r)
 			return
 		}
 		if len(path) >= len(g.repoName)+1 && path[:len(g.repoName)+1] == "/"+g.repoName {
