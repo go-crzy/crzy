@@ -14,6 +14,10 @@ func (m *mockState) listVersions() []byte {
 	return []byte(`{"versions": ["123"]}`)
 }
 
+func (m *mockState) listVersionDetails(version string) ([]byte, error) {
+	return []byte(`{"versions": ["123"]}`), nil
+}
+
 func (m *mockState) addStep(stepEvent) {
 
 }

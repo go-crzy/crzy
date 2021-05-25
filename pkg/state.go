@@ -42,6 +42,7 @@ type stepEvent struct {
 
 type state interface {
 	listVersions() []byte
+	listVersionDetails(string) ([]byte, error)
 	addStep(stepEvent)
 }
 
@@ -128,6 +129,18 @@ func (s *defaultState) listVersions() []byte {
 	}
 	output, _ := json.Marshal(&data)
 	return output
+}
+
+func (s *defaultState) listVersionDetails(version string) ([]byte, error) {
+	s.Lock()
+	defer s.Unlock()
+	// TODO: verifie si la version existe dans s.state
+	// - sinon renvoie une erreur nil, "versionnotfound"
+	// - si oui,
+	//    - recupère le syntheticWorkflow associé à la version
+	//    - unmarshall le workflow dans un []byte
+	//    - renvoie ([]byte, nil)
+	return []byte{}, nil
 }
 
 func (w *stateManager) start(ctx context.Context) error {
