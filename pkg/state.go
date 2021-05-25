@@ -17,8 +17,8 @@ const (
 )
 
 type syntheticWorkflow struct {
-	Runners map[string]runner
-	Version string
+	Runners map[string]runner `json:"runners"`
+	Version string            `json:"version"`
 }
 
 type runner struct {
