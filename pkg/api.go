@@ -19,7 +19,19 @@ func (v *versionsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// TODO: create a handler that checks the r.URL.Path is /v0/versions/xxxx si c'est le cas
-// utiliser listVersionDetails pour vérifier que xxxx existe: (e.g. caa0ea14d84ca40c)
-// - s'il n'exsiste pas, renvoyer un message `{"message": "Not Found"}`
-// - s'il existe, renvoyer le retour de listVersionDetails()
+type verHandler struct {
+	state *stateManager
+}
+
+func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if len(r.URL.Path) < 13 && r.URL.Path[:13] != "/v0/versions/" {
+		w.Write([]byte(`{"message": "Not Found"}`))
+		return
+	}
+	output, err := v.state.state.listVersionDetails(r.URL.Path[13:])
+	if err != nil {
+		w.Write([]byte(`{"message": "Not Found"}`))
+		return
+	}
+	w.Write([]byte(output))
+}

@@ -211,7 +211,7 @@ func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/v0/version", &versionHandler{})
 	mux.Handle("/v0/versions", &versionsHandler{state: g.state})
-	// TODO: ajouter un nouveau Handler pour "/v0/versions/"
+	mux.Handle("/v0/versions/", &verHandler{state: g.state})
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path

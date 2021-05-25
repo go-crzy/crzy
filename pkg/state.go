@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
@@ -131,16 +132,16 @@ func (s *defaultState) listVersions() []byte {
 	return output
 }
 
+var errNoVersion = errors.New("noVersion")
+
 func (s *defaultState) listVersionDetails(version string) ([]byte, error) {
 	s.Lock()
 	defer s.Unlock()
-	// TODO: verifie si la version existe dans s.state
-	// - sinon renvoie une erreur nil, "versionnotfound"
-	// - si oui,
-	//    - recupère le syntheticWorkflow associé à la version
-	//    - unmarshall le workflow dans un []byte
-	//    - renvoie ([]byte, nil)
-	return []byte{}, nil
+	x, ok := s.state[version]
+	if !ok {
+		return []byte{}, errNoVersion
+	}
+	return json.Marshal(x)
 }
 
 func (w *stateManager) start(ctx context.Context) error {
