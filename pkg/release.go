@@ -32,35 +32,29 @@ OUTER:
 			log.Info("release started...")
 			switch action.id {
 			case deployedMessage:
-				vars := []envVar{}
-				vars = append(vars, action.envs...)
+				vars := newEnvVars(action.envs...)
 				p, err := port.getPort()
 				if err != nil {
 					log.Error(err, "could not reserve port")
 					continue OUTER
 				}
 				vars = append(vars, envVar{Name: "port", Value: p})
-				m, err := groupEnvs(vars...)
-				if err != nil {
-					log.Error(err, "could not map envs")
-					continue OUTER
-				}
 				cmd := w.keys[w.flow]
 				cmd.log = log
 				if cmd.Command == "" {
 					continue
 				}
-				err = w.switchProcesses(p, cmd, m)
+				err = w.switchProcesses(p, cmd, vars)
 				if err != nil {
 					w.state.notifyStep(
-						getEnv(action.envs, "version"), "release",
+						action.envs.get("version"), "release",
 						runnerStatusFailed,
 						step{execStruct: cmd, Name: w.flow})
 					log.Error(err, "execution error")
 					continue OUTER
 				}
 				w.state.notifyStep(
-					getEnv(action.envs, "version"), "release",
+					action.envs.get("version"), "release",
 					runnerStatusDone,
 					step{execStruct: cmd, Name: w.flow})
 				log.Info("release execution succeeded...")
@@ -83,8 +77,8 @@ func (r *releaseWorkflow) killAll() error {
 	return nil
 }
 
-func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs map[string]string) error {
-	envs["port"] = port
+func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs envVars) error {
+	envs.addOne("port", port)
 	process, err := command.runBackground(r.execdir, envs)
 	if err != nil {
 		return err

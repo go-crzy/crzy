@@ -185,14 +185,8 @@ func (l *mockLogger) Error(err error, msg string, keysAndValues ...interface{}) 
 	l.logs = append(l.logs, msg)
 }
 
-func (l *mockLogger) V(level int) logr.Logger {
-	return &mockLogger{}
-}
+func (l *mockLogger) V(level int) logr.Logger { return &mockLogger{} }
 
-func (c *mockLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
-	return &mockLogger{}
-}
+func (c *mockLogger) WithValues(keysAndValues ...interface{}) logr.Logger { return &mockLogger{} }
 
-func (c *mockLogger) WithName(name string) logr.Logger {
-	return &mockLogger{}
-}
+func (c *mockLogger) WithName(name string) logr.Logger { return &mockLogger{} }

@@ -7,7 +7,7 @@ import (
 )
 
 func Test_getCmd_and_succeed(t *testing.T) {
-	output, err := getCmd(".", map[string]string{}, "git", "version").CombinedOutput()
+	output, err := getCmd(".", envVars{}, "git", "version").CombinedOutput()
 	if err != nil {
 		t.Error("test fails", err)
 	}
@@ -17,7 +17,7 @@ func Test_getCmd_and_succeed(t *testing.T) {
 }
 
 func Test_getCmd_with_parameters(t *testing.T) {
-	output, err := getCmd(".", map[string]string{"version": "version"}, "git", "version").CombinedOutput()
+	output, err := getCmd(".", envVars{{"version", "version"}}, "git", "version").CombinedOutput()
 	if err != nil {
 		t.Error("test fails", err)
 	}
@@ -52,13 +52,13 @@ func Test_runBackground_no_envs(t *testing.T) {
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 	}
 	if runtime.GOOS == "windows" {
 		e.Command = "powershell"
 		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
 	}
-	p, err := e.runBackground(".", map[string]string{})
+	p, err := e.runBackground(".", envVars{})
 	if err != nil {
 		t.Error(err, "start failed")
 		t.FailNow()
@@ -78,9 +78,9 @@ func Test_prepare_and_fail_command(t *testing.T) {
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 	}
-	_, err := e.prepare(".", map[string]string{})
+	_, err := e.prepare(".", envVars{})
 	if err != errMissingEnv {
 		t.Error(err, "should fail")
 	}
@@ -92,9 +92,9 @@ func Test_prepare_and_fail_args(t *testing.T) {
 		Command: "tail",
 		Args:    []string{"${xxx}", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 	}
-	_, err := e.prepare(".", map[string]string{})
+	_, err := e.prepare(".", envVars{})
 	if err != errMissingEnv {
 		t.Error(err, "should fail")
 	}
@@ -106,9 +106,9 @@ func Test_prepare_and_fail_envs(t *testing.T) {
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{{Name: "xxx", Value: "${xxx}"}},
+		Envs:    envVars{{Name: "xxx", Value: "${xxx}"}},
 	}
-	_, err := e.prepare(".", map[string]string{})
+	_, err := e.prepare(".", envVars{})
 	if err != errMissingEnv {
 		t.Error(err, "should fail")
 	}
@@ -120,10 +120,10 @@ func Test_run_and_succeed(t *testing.T) {
 		Command: "git",
 		Args:    []string{"version"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 		Output:  "",
 	}
-	_, err := e.run(".", map[string]string{})
+	_, err := e.run(".", envVars{})
 	if err != nil {
 		t.Error("should succeed")
 	}
@@ -135,10 +135,10 @@ func Test_run_and_succeed_with_output(t *testing.T) {
 		Command: "git",
 		Args:    []string{"version"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 		Output:  "data",
 	}
-	env, err := e.run(".", map[string]string{})
+	env, err := e.run(".", envVars{})
 	if err != nil {
 		t.Error("should succeed")
 	}
@@ -154,10 +154,10 @@ func Test_run_and_fail_command(t *testing.T) {
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 		Output:  "",
 	}
-	_, err := e.run(".", map[string]string{})
+	_, err := e.run(".", envVars{})
 	if err != errMissingEnv {
 		t.Error(err, "should fail")
 	}
@@ -169,9 +169,9 @@ func Test_run_and_fail_combinedoutput(t *testing.T) {
 		Command: "doesnotexist",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 	}
-	_, err := e.run(".", map[string]string{})
+	_, err := e.run(".", envVars{})
 	if err == nil ||
 		(err.Error() != "exec: \"doesnotexist\": executable file not found in $PATH" &&
 			err.Error() != "exec: \"doesnotexist\": executable file not found in %PATH%") {
@@ -186,9 +186,9 @@ func Test_runBackground_and_fail_command(t *testing.T) {
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{},
+		Envs:    envVars{},
 	}
-	_, err := e.runBackground(".", map[string]string{})
+	_, err := e.runBackground(".", envVars{})
 	if err != errMissingEnv {
 		t.Error(err, "should fail")
 	}
@@ -200,18 +200,18 @@ func Test_runBackground_with_envs(t *testing.T) {
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
-		Envs:    []envVar{{Name: "port", Value: "1234"}},
+		Envs:    envVars{{Name: "port", Value: "1234"}},
 	}
 	if runtime.GOOS == "windows" {
 		e.Command = "powershell"
 		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
 	}
-	envs, err := groupEnvs(e.Envs...)
+	_, err := e.Envs.toMap()
 	if err != nil {
 		t.Error(err, "should be able to convert envs")
 		t.FailNow()
 	}
-	p, err := e.runBackground(".", envs)
+	p, err := e.runBackground(".", e.Envs)
 	if err != nil {
 		t.Error(err, "start failed")
 		t.FailNow()

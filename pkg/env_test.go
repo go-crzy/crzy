@@ -4,17 +4,17 @@ import (
 	"testing"
 )
 
-func Test_getEnv_succeed(t *testing.T) {
-	e := []envVar{{Name: "version", Value: "123"}}
-	out := getEnv(e, "version")
+func Test_get_succeed(t *testing.T) {
+	e := envVars{{Name: "version", Value: "123"}}
+	out := e.get("version")
 	if out != "123" {
 		t.Error("getEnv should return 123")
 	}
 }
 
-func Test_getEnv_failed(t *testing.T) {
-	e := []envVar{{Name: "version", Value: "123"}}
-	out := getEnv(e, "release")
+func Test_get_failed(t *testing.T) {
+	e := envVars{{Name: "version", Value: "123"}}
+	out := e.get("release")
 	if out != "" {
 		t.Error("getEnv should return an empty string")
 	}
@@ -22,11 +22,11 @@ func Test_getEnv_failed(t *testing.T) {
 
 func Test_replaceEnv_and_succeed(t *testing.T) {
 	input := []string{`abc-${version}-${x}`, `abc-${version}`, `${version}`}
-	envs := map[string]string{"version": "123", "x": "abc"}
+	envs := newEnvVars(envVar{Name: "version", Value: "123"}, envVar{Name: "x", Value: "abc"})
 	expected := []string{`abc-123-abc`, `abc-123`, "123"}
 
 	for k, v := range input {
-		output, err := replaceEnvs(v, envs)
+		output, err := envs.replace(v)
 		if err != nil {
 			t.Error(err, "error replacing key")
 		}
@@ -38,19 +38,18 @@ func Test_replaceEnv_and_succeed(t *testing.T) {
 
 func Test_replaceEnv_and_failure(t *testing.T) {
 	input := []string{`abc-${version}-${x}`, `abc-${version}`}
-	envs := map[string]string{"x": "abc"}
+	envs := newEnvVars(envVar{Name: "x", Value: "abc"})
 
 	for _, v := range input {
-		_, err := replaceEnvs(v, envs)
-		if err != errMissingEnv {
+		if _, err := envs.replace(v); err != errMissingEnv {
 			t.Error("we should fail and we are not")
 		}
 	}
 }
 
 func Test_groupEnvs_and_succeed(t *testing.T) {
-	input := []envVar{{Name: "VERSION", Value: "1.0"}, {Name: "PORT", Value: "8080"}}
-	mapOfEnvs, err := groupEnvs(input...)
+	input := envVars{{Name: "VERSION", Value: "1.0"}, {Name: "PORT", Value: "8080"}}
+	mapOfEnvs, err := input.toMap()
 	if err != nil {
 		t.Error("groupEnvs should succeed")
 	}
@@ -71,8 +70,8 @@ func Test_groupEnvs_and_succeed(t *testing.T) {
 }
 
 func Test_groupEnvs_and_fail(t *testing.T) {
-	input := []envVar{{Name: "VERSION", Value: "1.0"}, {Name: "VERSION", Value: "2.0"}}
-	mapOfEnvs, err := groupEnvs(input...)
+	input := envVars{{Name: "VERSION", Value: "1.0"}, {Name: "VERSION", Value: "2.0"}}
+	mapOfEnvs, err := input.toMap()
 	if err != errDuplicateKeys {
 		t.Error("groupEnvs should return ErrDuplicateKeys")
 	}
