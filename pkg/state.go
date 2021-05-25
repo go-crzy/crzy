@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 	"time"
 
@@ -16,8 +17,8 @@ const (
 )
 
 type syntheticWorkflow struct {
-	Runners map[string]runner
-	Version string
+	Runners map[string]runner `json:"runners"`
+	Version string            `json:"version"`
 }
 
 type runner struct {
@@ -42,6 +43,7 @@ type stepEvent struct {
 
 type state interface {
 	listVersions() []byte
+	listVersionDetails(string) ([]byte, error)
 	addStep(stepEvent)
 }
 
@@ -128,6 +130,18 @@ func (s *defaultState) listVersions() []byte {
 	}
 	output, _ := json.Marshal(&data)
 	return output
+}
+
+var errNoVersion = errors.New("noVersion")
+
+func (s *defaultState) listVersionDetails(version string) ([]byte, error) {
+	s.Lock()
+	defer s.Unlock()
+	x, ok := s.state[version]
+	if !ok {
+		return []byte{}, errNoVersion
+	}
+	return json.Marshal(x)
 }
 
 func (w *stateManager) start(ctx context.Context) error {
