@@ -56,6 +56,8 @@ func (w *deployWorkflow) start(ctx context.Context, action <-chan event, release
 				vars.addOne("artifact", artifact)
 
 				if err := w.startFlows(action, &vars); err != nil {
+					log.Error(err, "deploy execution failed...")
+					trigger <- event{id: deployedMessage}
 					continue
 				}
 				log.Info("deploy execution succeeded...")
@@ -69,7 +71,7 @@ func (w *deployWorkflow) start(ctx context.Context, action <-chan event, release
 }
 
 func (w *deployWorkflow) startFlows(action event, vars *envVars) error {
-	log := w.log.WithName("deploy")
+	log := w.log
 	for _, v := range w.flow {
 		cmd := w.keys[v]
 		cmd.log = log
@@ -79,6 +81,7 @@ func (w *deployWorkflow) startFlows(action event, vars *envVars) error {
 		log.Info("running...", "data", v)
 		e, err := cmd.run(w.workspace, *vars)
 		if err != nil {
+			w.state.notifyStep(action.envs.get("version"), "deploy", runnerStatusFailed, step{execStruct: cmd, Name: v})
 			return err
 		}
 		w.state.notifyStep(action.envs.get("version"), "deploy", runnerStatusDone, step{execStruct: cmd, Name: v})
