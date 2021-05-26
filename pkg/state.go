@@ -135,6 +135,11 @@ func (s *defaultState) listVersions() []byte {
 
 var errNoVersion = errors.New("noVersion")
 
+type displayVersion struct {
+	Version   string   `json:"version"`
+	Workflows []runner `json:"workflows"`
+}
+
 func (s *defaultState) listVersionDetails(version string) ([]byte, error) {
 	s.Lock()
 	defer s.Unlock()
@@ -142,7 +147,22 @@ func (s *defaultState) listVersionDetails(version string) ([]byte, error) {
 	if !ok {
 		return []byte{}, errNoVersion
 	}
-	return json.Marshal(x)
+	runners := []runner{}
+	if v, ok := x.Runners["trigger"]; ok {
+		runners = append(runners, v)
+	}
+	if v, ok := x.Runners["deploy"]; ok {
+		runners = append(runners, v)
+	}
+	if v, ok := x.Runners["release"]; ok {
+		runners = append(runners, v)
+	}
+	y := displayVersion{
+		Version:   x.Version,
+		Workflows: runners,
+	}
+	_ = &syntheticWorkflow{}
+	return json.Marshal(y)
 }
 
 func (w *stateManager) start(ctx context.Context) error {

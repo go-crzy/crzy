@@ -90,7 +90,7 @@ func Test_listVersionsDetails_succeed(t *testing.T) {
 	if err != nil {
 		t.Error("should succeed; error:", err)
 	}
-	if string(data) != `{"runners":{"deploy":{"steps":[{"command":"go","args":["test","./..."],"workdir":".","name":"test"}],"name":"deploy","status":"succeeded"}},"version":"abc"}` {
+	if string(data) != `{"version":"abc","workflows":[{"steps":[{"command":"go","args":["test","./..."],"workdir":".","name":"test"}],"name":"deploy","status":"succeeded"}]}` {
 		t.Error("error, current message is: ", string(data))
 	}
 }
