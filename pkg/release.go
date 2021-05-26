@@ -25,7 +25,6 @@ func (w *releaseWorkflow) start(ctx context.Context, action <-chan event) error 
 		log.Error(err, "could not start due to unvailable ports")
 		return err
 	}
-OUTER:
 	for {
 		select {
 		case action := <-action:
@@ -36,9 +35,8 @@ OUTER:
 				p, err := port.getPort()
 				if err != nil {
 					log.Error(err, "could not reserve port")
-					continue OUTER
+					continue
 				}
-				vars = append(vars, envVar{Name: "port", Value: p})
 				cmd := w.keys[w.flow]
 				cmd.log = log
 				if cmd.Command == "" {
@@ -46,17 +44,9 @@ OUTER:
 				}
 				err = w.switchProcesses(p, cmd, vars)
 				if err != nil {
-					w.state.notifyStep(
-						action.envs.get("version"), "release",
-						runnerStatusFailed,
-						step{execStruct: cmd, Name: w.flow})
 					log.Error(err, "execution error")
-					continue OUTER
+					continue
 				}
-				w.state.notifyStep(
-					action.envs.get("version"), "release",
-					runnerStatusDone,
-					step{execStruct: cmd, Name: w.flow})
 				log.Info("release execution succeeded...")
 			}
 		case <-ctx.Done():
@@ -79,7 +69,15 @@ func (r *releaseWorkflow) killAll() error {
 
 func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs envVars) error {
 	envs.addOne("port", port)
-	process, err := command.runBackground(r.execdir, envs)
+	workflow := &workflow{
+		log:     r.log,
+		version: envs.get("version"),
+		name:    "release",
+		basedir: r.execdir,
+		envs:    envs,
+		state:   r.state,
+	}
+	process, err := workflow.start(command)
 	if err != nil {
 		return err
 	}

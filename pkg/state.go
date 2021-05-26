@@ -22,16 +22,16 @@ type syntheticWorkflow struct {
 }
 
 type runner struct {
-	Steps  []step
-	Name   string
-	Status string
+	Steps  []step `json:"steps"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }
 
 type step struct {
 	execStruct
-	Name      string
-	StartTime *time.Time
-	Duration  *time.Duration
+	Name      string         `json:"name"`
+	StartTime *time.Time     `json:"start_time"`
+	Duration  *time.Duration `json:"duration"`
 }
 
 type stepEvent struct {

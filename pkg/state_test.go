@@ -54,10 +54,37 @@ func Test_newStateManager(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	data := v.state.listVersions()
 	if string(data) != `{"versions":["123"]}` {
-		t.Error("We are fucked", string(data))
+		t.Error("should return expected message, current:", string(data))
 	}
 	cancel()
 	if err := g.Wait(); err != nil && err.Error() != "context cancel" {
 		t.Error("should receive a context cancel message")
+	}
+}
+
+func Test_listVersionsDetails(t *testing.T) {
+	r := defaultState{
+		state: map[string]syntheticWorkflow{
+			"abc": {
+				Runners: map[string]runner{
+					"deploy": {
+						Steps: []step{
+							{
+								execStruct: execStruct{
+									Command: "run",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	data, err := r.listVersionDetails("abc")
+	if err != nil {
+		t.Error("should succeed; error:", err)
+	}
+	if string(data) != `{"runners":{"deploy":{"steps":[{"command":"run","args":null,"workdir":"","envs":null,"output":"","name":"","start_time":null,"duration":null}],"name":"","status":""}},"version":""}` {
+		t.Error("error, current message is: ", string(data))
 	}
 }

@@ -5,18 +5,18 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 
 	"github.com/go-logr/logr"
 )
 
 type execStruct struct {
 	log     logr.Logger
-	Command string
-	Args    []string
-	WorkDir string
-	Envs    envVars
-	Output  string
+	name    string
+	Command string   `json:"command"`
+	Args    []string `json:"args"`
+	WorkDir string   `json:"workdir"`
+	Envs    envVars  `json:"envs"`
+	Output  string   `json:"output"`
 }
 
 func getCmd(dir string, envs envVars, name string, args ...string) *exec.Cmd {
@@ -57,32 +57,4 @@ func (e *execStruct) prepare(workspace string, envs envVars) (*exec.Cmd, error) 
 	}
 	e.log.Info(full)
 	return getCmd(dir, envs, command, args...), nil
-}
-
-func (e *execStruct) run(workspace string, envs envVars) (*envVar, error) {
-	cmd, err := e.prepare(workspace, envs)
-	if err != nil {
-		return nil, err
-	}
-	output, err := cmd.CombinedOutput()
-	results := strings.Split(string(output), "\n")
-	for _, v := range results {
-		e.log.Info(v)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if e.Output != "" {
-		return &envVar{Name: e.Output, Value: results[0]}, nil
-	}
-	return nil, nil
-}
-
-func (e *execStruct) runBackground(workspace string, envs envVars) (*os.Process, error) {
-	cmd, err := e.prepare(workspace, envs)
-	if err != nil {
-		return nil, err
-	}
-	err = cmd.Start()
-	return cmd.Process, err
 }

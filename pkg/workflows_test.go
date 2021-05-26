@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"runtime"
 	"testing"
 	"time"
 
@@ -78,5 +79,198 @@ func Test_workflowsAndFail(t *testing.T) {
 		f)
 	if err == nil {
 		t.Error("should receive an error message")
+	}
+}
+
+func Test_execute_and_succeed(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "git",
+		Args:    []string{"version"},
+		WorkDir: ".",
+		Envs:    envVars{},
+		Output:  "",
+	}
+	_, err := workflow.execute(e)
+	if err != nil {
+		t.Error("should succeed")
+	}
+}
+
+func Test_execute_and_succeed_with_output(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "git",
+		Args:    []string{"version"},
+		WorkDir: ".",
+		Envs:    envVars{},
+		Output:  "data",
+	}
+	env, err := workflow.execute(e)
+	if err != nil {
+		t.Error("should succeed")
+	}
+	if env == nil || env.Name != "data" ||
+		len(env.Value) < 11 || env.Value[0:11] != "git version" {
+		t.Error("should return data=\"git version\"", env.Value)
+	}
+}
+
+func Test_execute_and_fail_command(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "${xxx}",
+		Args:    []string{"-f", "config.go"},
+		WorkDir: ".",
+		Envs:    envVars{},
+		Output:  "",
+	}
+	_, err := workflow.execute(e)
+	if err != errMissingEnv {
+		t.Error(err, "should fail")
+	}
+}
+
+func Test_execute_and_fail_combinedoutput(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "doesnotexist",
+		Args:    []string{"-f", "config.go"},
+		WorkDir: ".",
+		Envs:    envVars{},
+	}
+	_, err := workflow.execute(e)
+	if err == nil ||
+		(err.Error() != "exec: \"doesnotexist\": executable file not found in $PATH" &&
+			err.Error() != "exec: \"doesnotexist\": executable file not found in %PATH%") {
+
+		t.Error(err, "should fail")
+	}
+}
+
+func Test_start_no_envs(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "tail",
+		Args:    []string{"-f", "config.go"},
+		WorkDir: ".",
+		Envs:    envVars{},
+	}
+	if runtime.GOOS == "windows" {
+		e.Command = "powershell"
+		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
+	}
+	p, err := workflow.start(e)
+	if err != nil {
+		t.Error(err, "start failed")
+		t.FailNow()
+	}
+	if p == nil {
+		t.Error("process is empty")
+	}
+	err = p.Kill()
+	if err != nil {
+		t.Error(err, "kill failed")
+	}
+}
+
+func Test_start_and_fail_command(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "${xxx}",
+		Args:    []string{"-f", "config.go"},
+		WorkDir: ".",
+		Envs:    envVars{},
+	}
+	_, err := workflow.start(e)
+	if err != errMissingEnv {
+		t.Error(err, "should fail")
+	}
+}
+
+func Test_rstart_with_envs(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	e := execStruct{
+		log:     &mockLogger{},
+		Command: "tail",
+		Args:    []string{"-f", "config.go"},
+		WorkDir: ".",
+		Envs:    envVars{{Name: "port", Value: "1234"}},
+	}
+	if runtime.GOOS == "windows" {
+		e.Command = "powershell"
+		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
+	}
+	_, err := e.Envs.toMap()
+	if err != nil {
+		t.Error(err, "should be able to convert envs")
+		t.FailNow()
+	}
+	p, err := workflow.start(e)
+	if err != nil {
+		t.Error(err, "start failed")
+		t.FailNow()
+	}
+	if p == nil {
+		t.Error("process is empty")
+	}
+	err = p.Kill()
+	if err != nil {
+		t.Error(err, "kill failed")
 	}
 }

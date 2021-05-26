@@ -79,12 +79,18 @@ func (w *deployWorkflow) startFlows(action event, vars *envVars) error {
 			continue
 		}
 		log.Info("running...", "data", v)
-		e, err := cmd.run(w.workspace, *vars)
+		workflow := &workflow{
+			log:     log,
+			version: action.envs.get("version"),
+			name:    "deploy",
+			basedir: w.workspace,
+			envs:    *vars,
+			state:   w.state,
+		}
+		e, err := workflow.execute(cmd)
 		if err != nil {
-			w.state.notifyStep(action.envs.get("version"), "deploy", runnerStatusFailed, step{execStruct: cmd, Name: v})
 			return err
 		}
-		w.state.notifyStep(action.envs.get("version"), "deploy", runnerStatusDone, step{execStruct: cmd, Name: v})
 		if e != nil {
 			vars.add(*e)
 		}
