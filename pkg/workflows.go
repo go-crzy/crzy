@@ -2,6 +2,8 @@ package pkg
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -14,6 +16,8 @@ const (
 	triggeredMessage string = "triggered"
 	deployedMessage  string = "deployed"
 )
+
+var errNoExcution = errors.New("noexec")
 
 type event struct {
 	id   string
@@ -99,7 +103,10 @@ type workflow struct {
 	state   stateClient
 }
 
-func (w *workflow) execute(e execStruct) (*envVar, error) {
+func (w *workflow) execute(e *execStruct) (*envVar, error) {
+	if e == nil {
+		return nil, errNoExcution
+	}
 	cmd, err := e.prepare(w.basedir, w.envs)
 	if err != nil {
 		return nil, err
@@ -107,7 +114,7 @@ func (w *workflow) execute(e execStruct) (*envVar, error) {
 	start := time.Now()
 	output, err := cmd.CombinedOutput()
 	status := runnerStatusDone
-	duration := time.Since(start)
+	duration := fmt.Sprintf("%dms", time.Since(start).Milliseconds())
 	if err != nil {
 		status = runnerStatusFailed
 	}
@@ -116,10 +123,11 @@ func (w *workflow) execute(e execStruct) (*envVar, error) {
 		w.name,
 		status,
 		step{
-			execStruct: e,
+			execStruct: *e,
 			Name:       e.name,
 			StartTime:  &start,
 			Duration:   &duration,
+			Variables:  w.envs,
 		})
 	results := strings.Split(string(output), "\n")
 	for _, v := range results {
@@ -134,7 +142,10 @@ func (w *workflow) execute(e execStruct) (*envVar, error) {
 	return nil, nil
 }
 
-func (w *workflow) start(e execStruct) (*os.Process, error) {
+func (w *workflow) start(e *execStruct) (*os.Process, error) {
+	if e == nil {
+		return nil, errNoExcution
+	}
 	cmd, err := e.prepare(w.basedir, w.envs)
 	if err != nil {
 		return nil, err
@@ -147,9 +158,10 @@ func (w *workflow) start(e execStruct) (*os.Process, error) {
 		w.name,
 		status,
 		step{
-			execStruct: e,
+			execStruct: *e,
 			Name:       e.name,
 			StartTime:  &start,
+			Variables:  w.envs,
 		})
 	return cmd.Process, err
 }

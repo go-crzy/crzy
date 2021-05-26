@@ -29,9 +29,10 @@ type runner struct {
 
 type step struct {
 	execStruct
-	Name      string         `json:"name"`
-	StartTime *time.Time     `json:"start_time"`
-	Duration  *time.Duration `json:"duration"`
+	Name      string     `json:"name"`
+	StartTime *time.Time `json:"start_time,omitempty"`
+	Duration  *string    `json:"duration,omitempty"`
+	Variables []envVar   `json:"flow.envs,omitempty"`
 }
 
 type stepEvent struct {

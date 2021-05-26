@@ -91,7 +91,7 @@ func Test_execute_and_succeed(t *testing.T) {
 		envs:    envVars{},
 		state:   &stateMockClient{},
 	}
-	e := execStruct{
+	e := &execStruct{
 		log:     &mockLogger{},
 		Command: "git",
 		Args:    []string{"version"},
@@ -114,7 +114,7 @@ func Test_execute_and_succeed_with_output(t *testing.T) {
 		envs:    envVars{},
 		state:   &stateMockClient{},
 	}
-	e := execStruct{
+	e := &execStruct{
 		log:     &mockLogger{},
 		Command: "git",
 		Args:    []string{"version"},
@@ -141,7 +141,7 @@ func Test_execute_and_fail_command(t *testing.T) {
 		envs:    envVars{},
 		state:   &stateMockClient{},
 	}
-	e := execStruct{
+	e := &execStruct{
 		log:     &mockLogger{},
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
@@ -164,7 +164,7 @@ func Test_execute_and_fail_combinedoutput(t *testing.T) {
 		envs:    envVars{},
 		state:   &stateMockClient{},
 	}
-	e := execStruct{
+	e := &execStruct{
 		log:     &mockLogger{},
 		Command: "doesnotexist",
 		Args:    []string{"-f", "config.go"},
@@ -200,7 +200,7 @@ func Test_start_no_envs(t *testing.T) {
 		e.Command = "powershell"
 		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
 	}
-	p, err := workflow.start(e)
+	p, err := workflow.start(&e)
 	if err != nil {
 		t.Error(err, "start failed")
 		t.FailNow()
@@ -223,7 +223,7 @@ func Test_start_and_fail_command(t *testing.T) {
 		envs:    envVars{},
 		state:   &stateMockClient{},
 	}
-	e := execStruct{
+	e := &execStruct{
 		log:     &mockLogger{},
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
@@ -245,7 +245,7 @@ func Test_rstart_with_envs(t *testing.T) {
 		envs:    envVars{},
 		state:   &stateMockClient{},
 	}
-	e := execStruct{
+	e := &execStruct{
 		log:     &mockLogger{},
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},

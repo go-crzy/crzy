@@ -77,7 +77,7 @@ func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs 
 		envs:    envs,
 		state:   r.state,
 	}
-	process, err := workflow.start(command)
+	process, err := workflow.start(&command)
 	if err != nil {
 		return err
 	}

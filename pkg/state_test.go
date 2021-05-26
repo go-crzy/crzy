@@ -66,15 +66,21 @@ func Test_listVersionsDetails(t *testing.T) {
 	r := defaultState{
 		state: map[string]syntheticWorkflow{
 			"abc": {
+				Version: "abc",
 				Runners: map[string]runner{
 					"deploy": {
 						Steps: []step{
 							{
 								execStruct: execStruct{
-									Command: "run",
+									Command: "go",
+									Args:    []string{"test", "./..."},
+									WorkDir: ".",
 								},
+								Name: "test",
 							},
 						},
+						Name:   "deploy",
+						Status: "succeeded",
 					},
 				},
 			},
@@ -84,7 +90,7 @@ func Test_listVersionsDetails(t *testing.T) {
 	if err != nil {
 		t.Error("should succeed; error:", err)
 	}
-	if string(data) != `{"runners":{"deploy":{"steps":[{"command":"run","args":null,"workdir":"","envs":null,"output":"","name":"","start_time":null,"duration":null}],"name":"","status":""}},"version":""}` {
+	if string(data) != `{"runners":{"deploy":{"steps":[{"command":"go","args":["test","./..."],"workdir":".","name":"test"}],"name":"deploy","status":"succeeded"}},"version":"abc"}` {
 		t.Error("error, current message is: ", string(data))
 	}
 }

@@ -87,7 +87,7 @@ func (w *deployWorkflow) startFlows(action event, vars *envVars) error {
 			envs:    *vars,
 			state:   w.state,
 		}
-		e, err := workflow.execute(cmd)
+		e, err := workflow.execute(&cmd)
 		if err != nil {
 			return err
 		}
