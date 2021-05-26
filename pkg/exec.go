@@ -5,18 +5,18 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 
 	"github.com/go-logr/logr"
 )
 
 type execStruct struct {
 	log     logr.Logger
-	Command string
-	Args    []string
-	WorkDir string
-	Envs    envVars
-	Output  string
+	name    string
+	Command string   `json:"command"`
+	Args    []string `json:"args,omitempty"`
+	WorkDir string   `json:"workdir"`
+	Envs    envVars  `json:"envs,omitempty"`
+	Output  string   `json:"output,omitempty"`
 }
 
 func getCmd(dir string, envs envVars, name string, args ...string) *exec.Cmd {
@@ -34,10 +34,12 @@ func getCmd(dir string, envs envVars, name string, args ...string) *exec.Cmd {
 
 func (e *execStruct) prepare(workspace string, envs envVars) (*exec.Cmd, error) {
 	dir := path.Join(workspace, e.WorkDir)
+	e.WorkDir = dir
 	command, err := envs.replace(e.Command)
 	if err != nil {
 		return nil, err
 	}
+	e.Command = command
 	args := []string{}
 	full := command
 	for _, arg := range e.Args {
@@ -48,41 +50,14 @@ func (e *execStruct) prepare(workspace string, envs envVars) (*exec.Cmd, error) 
 		args = append(args, arg)
 		full = fmt.Sprintf("%s %s", full, arg)
 	}
-	for _, value := range e.Envs {
+	e.Args = args
+	for index, value := range e.Envs {
 		if v := envs.get(value.Name); v == "" {
-			if _, err := envs.replace(value.Value); err != nil {
+			if e.Envs[index].Value, err = envs.replace(value.Value); err != nil {
 				return nil, err
 			}
 		}
 	}
 	e.log.Info(full)
-	return getCmd(dir, envs, command, args...), nil
-}
-
-func (e *execStruct) run(workspace string, envs envVars) (*envVar, error) {
-	cmd, err := e.prepare(workspace, envs)
-	if err != nil {
-		return nil, err
-	}
-	output, err := cmd.CombinedOutput()
-	results := strings.Split(string(output), "\n")
-	for _, v := range results {
-		e.log.Info(v)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if e.Output != "" {
-		return &envVar{Name: e.Output, Value: results[0]}, nil
-	}
-	return nil, nil
-}
-
-func (e *execStruct) runBackground(workspace string, envs envVars) (*os.Process, error) {
-	cmd, err := e.prepare(workspace, envs)
-	if err != nil {
-		return nil, err
-	}
-	err = cmd.Start()
-	return cmd.Process, err
+	return getCmd(dir, e.Envs, command, args...), nil
 }

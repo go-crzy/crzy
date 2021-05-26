@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"encoding/json"
 	"net/http"
 )
@@ -25,13 +26,11 @@ type verHandler struct {
 }
 
 func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if len(r.URL.Path) < 13 && r.URL.Path[:13] != "/v0/versions/" {
-		w.Write([]byte(`{"message": "Not Found"}`))
-		return
-	}
-	output, err := v.state.state.listVersionDetails(r.URL.Path[13:])
+	version := r.URL.Path[13:]
+	output, err := v.state.state.listVersionDetails(version)
 	if err != nil {
-		w.Write([]byte(`{"message": "Not Found"}`))
+		w.Write([]byte(fmt.Sprintf(`{"message": "version %s not found"}`, version)))
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	w.Write([]byte(output))
