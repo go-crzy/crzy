@@ -62,7 +62,7 @@ func Test_newStateManager(t *testing.T) {
 	}
 }
 
-func Test_listVersionsDetails(t *testing.T) {
+func Test_listVersionsDetails_succeed(t *testing.T) {
 	r := defaultState{
 		state: map[string]syntheticWorkflow{
 			"abc": {
@@ -92,5 +92,19 @@ func Test_listVersionsDetails(t *testing.T) {
 	}
 	if string(data) != `{"runners":{"deploy":{"steps":[{"command":"go","args":["test","./..."],"workdir":".","name":"test"}],"name":"deploy","status":"succeeded"}},"version":"abc"}` {
 		t.Error("error, current message is: ", string(data))
+	}
+}
+
+func Test_listVersionsDetails_fail(t *testing.T) {
+	r := defaultState{
+		state: map[string]syntheticWorkflow{
+			"abc": {
+				Version: "abc",
+			},
+		},
+	}
+	_, err := r.listVersionDetails("def")
+	if err != errNoVersion {
+		t.Error("should fail with errNoVersion; error:", err)
 	}
 }
