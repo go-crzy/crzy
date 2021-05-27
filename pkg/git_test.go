@@ -70,7 +70,8 @@ func Test_newGitServer(t *testing.T) {
 		Config: config{},
 	}
 	action := make(chan event)
-	_, err = r.newGitServer(store, &stateManager{}, action)
+	release := make(chan event)
+	_, err = r.newGitServer(store, &stateManager{}, action, release)
 	if err != nil {
 		t.Error("should succeed", err)
 	}
@@ -150,8 +151,10 @@ func Test_mockGitSuccessCommand(t *testing.T) {
 
 func Test_captureAndTrigger_and_event(t *testing.T) {
 	action := make(chan event, 1)
+	release := make(chan event)
 	g := &gitServer{
 		action:   action,
+		release:  release,
 		repoName: "color.git",
 	}
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -188,8 +191,10 @@ func Test_captureAndTrigger_and_event(t *testing.T) {
 
 func Test_captureAndTrigger_and_api(t *testing.T) {
 	action := make(chan event, 1)
+	release := make(chan event)
 	g := &gitServer{
 		action:   action,
+		release:  release,
 		repoName: "color.git",
 		state:    &stateManager{state: &mockState{}},
 	}
@@ -222,8 +227,10 @@ func Test_captureAndTrigger_and_api(t *testing.T) {
 
 func Test_captureAndTrigger_and_skip(t *testing.T) {
 	action := make(chan event, 1)
+	release := make(chan event)
 	g := &gitServer{
 		action:   action,
+		release:  release,
 		repoName: "color.git",
 	}
 	next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
