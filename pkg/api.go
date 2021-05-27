@@ -1,8 +1,8 @@
 package pkg
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -27,6 +27,8 @@ type verHandler struct {
 
 func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	version := r.URL.Path[13:]
+	// TODO: si une personne tape /v0/versions/abc sans rien derriere,
+	// renvoyer listVersionDetails
 	output, err := v.state.state.listVersionDetails(version)
 	if err != nil {
 		w.Write([]byte(fmt.Sprintf(`{"message": "version %s not found"}`, version)))
@@ -34,6 +36,8 @@ func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(output))
+	// Sinon si une personne renvoie /v0/versions/abc/log ou /v0/versions/abc/err,
+	// renvoyer state.logVersion(version, "log") ou state.logVersion(version, "err")
 }
 
 type actionHandler struct{}
