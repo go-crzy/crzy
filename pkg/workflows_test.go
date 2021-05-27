@@ -29,6 +29,8 @@ func Test_workflowsAndCancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	startTrigger := make(chan event)
 	defer close(startTrigger)
+	startRelease := make(chan event)
+	defer close(startRelease)
 	git := &mockGitSuccessCommand{}
 	f := func(port string) {}
 	g.Go(func() error {
@@ -39,6 +41,7 @@ func Test_workflowsAndCancel(t *testing.T) {
 		},
 			git,
 			startTrigger,
+			startRelease,
 			f,
 		)
 	})
@@ -66,6 +69,8 @@ func Test_workflowsAndFail(t *testing.T) {
 	}
 	startTrigger := make(chan event)
 	defer close(startTrigger)
+	startRelease := make(chan event)
+	defer close(startRelease)
 	git := &mockGitFailCommand{}
 	f := func(port string) {}
 	err := r.createAndStartWorkflows(
@@ -77,6 +82,7 @@ func Test_workflowsAndFail(t *testing.T) {
 		},
 		git,
 		startTrigger,
+		startRelease,
 		f)
 	if err == nil {
 		t.Error("should receive an error message")

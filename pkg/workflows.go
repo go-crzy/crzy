@@ -30,6 +30,7 @@ func (r *runContainer) createAndStartWorkflows(
 	state *stateManager,
 	git gitCommand,
 	startTrigger chan event,
+	startRelease chan event,
 	switchUpstream func(string)) error {
 	err := git.cloneRepository()
 	if err != nil {
@@ -85,8 +86,6 @@ func (r *runContainer) createAndStartWorkflows(
 	}
 	startDeploy := make(chan event)
 	defer close(startDeploy)
-	startRelease := make(chan event)
-	defer close(startRelease)
 	g.Go(func() error { return state.start(ctx) })
 	g.Go(func() error { return trigger.start(ctx, startTrigger, startDeploy) })
 	g.Go(func() error { return deploy.start(ctx, startDeploy, startRelease, startTrigger) })
