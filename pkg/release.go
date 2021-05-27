@@ -12,7 +12,7 @@ type releaseWorkflow struct {
 	execdir        string
 	log            logr.Logger
 	keys           map[string]execStruct
-	files          map[string][]*os.File
+	files          map[string][]*file
 	flow           string
 	processes      map[string]*os.Process
 	switchUpstream func(string)
@@ -64,12 +64,7 @@ func (r *releaseWorkflow) killAll() error {
 			return err
 		}
 		delete(r.processes, k)
-		if _, ok := r.files[k]; ok {
-			for _, f := range r.files[k] {
-				f.Close()
-			}
-			delete(r.files, k)
-		}
+		delete(r.files, k)
 	}
 	return nil
 }
@@ -98,12 +93,7 @@ func (r *releaseWorkflow) switchProcesses(port string, command execStruct, envs 
 				return err
 			}
 			delete(r.processes, k)
-			if _, ok := r.files[k]; ok {
-				for _, f := range r.files[k] {
-					f.Close()
-				}
-				delete(r.files, k)
-			}
+			delete(r.files, k)
 		}
 	}
 	return nil
