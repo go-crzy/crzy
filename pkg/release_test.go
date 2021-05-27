@@ -29,7 +29,7 @@ func Test_releaseWorkflow(t *testing.T) {
 		flow:           "run",
 		switchUpstream: func(string) {},
 		processes:      map[string]*os.Process{},
-		files:          make(map[string][]*os.File),
+		files:          make(map[string][]*file),
 	}
 	if runtime.GOOS == "windows" {
 		release.Run.Command = "powershell"

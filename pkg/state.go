@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +16,8 @@ const (
 	runnerStatusFailed  = "failure"
 	runnerStatusDone    = "success"
 )
+
+const maxLogLines = 10000
 
 type syntheticWorkflow struct {
 	Runners map[string]runner `json:"runners"`
@@ -194,7 +196,11 @@ func (s *defaultState) logVersion(version, file string) ([]byte, error) {
 		return []byte{}, errNoLogfile
 	}
 	f := x.Runners["release"].Steps[0].execStruct.files[key]
-	return os.ReadFile(f.Name())
+	output, err := f.ReadLines(0, maxLogLines)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(strings.Join(output, "\n")), nil
 }
 
 func (w *stateManager) start(ctx context.Context) error {
