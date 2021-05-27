@@ -17,6 +17,7 @@ type execStruct struct {
 	WorkDir string   `json:"workdir"`
 	Envs    envVars  `json:"envs,omitempty"`
 	Output  string   `json:"output,omitempty"`
+	files   []*os.File
 }
 
 func getCmd(dir string, envs envVars, name string, args ...string) *exec.Cmd {

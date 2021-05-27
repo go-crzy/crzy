@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -78,6 +79,7 @@ func (r *runContainer) createAndStartWorkflows(
 		},
 		flow:           "run",
 		processes:      map[string]*os.Process{},
+		files:          make(map[string][]*os.File),
 		switchUpstream: switchUpstream,
 		state:          &stateDefaultClient{notifier: state.notifier},
 	}
@@ -150,6 +152,19 @@ func (w *workflow) start(e *execStruct) (*os.Process, error) {
 	if err != nil {
 		return nil, err
 	}
+	stdout := path.Join(w.basedir, fmt.Sprintf("log-%s.out", w.envs.get("version")))
+	stderr := path.Join(w.basedir, fmt.Sprintf("err-%s.out", w.envs.get("version")))
+	logWriter, err := os.OpenFile(stdout, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		return nil, err
+	}
+	errWriter, err := os.OpenFile(stderr, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0600)
+	if err != nil {
+		return nil, err
+	}
+	e.files = append(e.files, logWriter, errWriter)
+	cmd.Stdout = logWriter
+	cmd.Stderr = errWriter
 	start := time.Now()
 	err = cmd.Start()
 	status := runnerStatusStarted

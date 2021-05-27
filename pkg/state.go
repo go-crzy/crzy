@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"os"
 	"sync"
 	"time"
 
@@ -46,6 +47,7 @@ type state interface {
 	listVersions() []byte
 	listVersionDetails(string) ([]byte, error)
 	addStep(stepEvent)
+	logVersion(string, string) ([]byte, error)
 }
 
 type defaultState struct {
@@ -133,7 +135,11 @@ func (s *defaultState) listVersions() []byte {
 	return output
 }
 
-var errNoVersion = errors.New("noVersion")
+var (
+	errNoVersion = errors.New("noversion")
+	errNoLogfile = errors.New("nologfile")
+	errWrongFile = errors.New("wrongfile")
+)
 
 type displayVersion struct {
 	Version   string   `json:"version"`
@@ -163,6 +169,32 @@ func (s *defaultState) listVersionDetails(version string) ([]byte, error) {
 	}
 	_ = &syntheticWorkflow{}
 	return json.Marshal(y)
+}
+
+func (s *defaultState) logVersion(version, file string) ([]byte, error) {
+	s.Lock()
+	defer s.Unlock()
+	key := 0
+	switch file {
+	case "log":
+		key = 0
+	case "err":
+		key = 1
+	default:
+		return []byte{}, errWrongFile
+	}
+	x, ok := s.state[version]
+	if !ok {
+		return []byte{}, errNoVersion
+	}
+	if _, ok := x.Runners["release"]; !ok ||
+		len(x.Runners["release"].Steps) == 0 ||
+		len(x.Runners["release"].Steps[0].execStruct.files) == 0 ||
+		len(x.Runners["release"].Steps[0].execStruct.files) == 1 {
+		return []byte{}, errNoLogfile
+	}
+	f := x.Runners["release"].Steps[0].execStruct.files[key]
+	return os.ReadFile(f.Name())
 }
 
 func (w *stateManager) start(ctx context.Context) error {

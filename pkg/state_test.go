@@ -22,6 +22,10 @@ func (m *mockState) addStep(stepEvent) {
 
 }
 
+func (s *mockState) logVersion(version, file string) ([]byte, error) {
+	return []byte("line1\nline2"), nil
+}
+
 func Test_newStateManager(t *testing.T) {
 	r := &runContainer{
 		Log: &mockLogger{},
