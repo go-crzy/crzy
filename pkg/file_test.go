@@ -40,7 +40,7 @@ func Test_file_readlines(t *testing.T) {
 		t.Error(err, "should succeed")
 		t.FailNow()
 	}
-	_, err = f.Write([]byte("line1\nline2\nline3\nline4"))
+	_, err = f.Write([]byte("line1\nline2\nline3"))
 	if err != nil {
 		t.Error(err, "should succeed")
 		t.FailNow()

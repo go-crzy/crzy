@@ -38,10 +38,11 @@ func (f *file) ReadLines(offset, limit int) ([]string, error) {
 		if line < offset {
 			continue
 		}
-		if line > offset+limit {
+		if line >= offset+limit {
 			break
 		}
-		output = append(output, scanner.Text())
+		line := scanner.Text()
+		output = append(output, line)
 	}
 	return output, nil
 }
