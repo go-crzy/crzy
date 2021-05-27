@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"os"
 	"runtime"
 	"testing"
 	"time"
@@ -180,13 +181,28 @@ func Test_execute_and_fail_combinedoutput(t *testing.T) {
 	}
 }
 
-func Test_start_no_envs(t *testing.T) {
+func Test_execute_without_exec(t *testing.T) {
 	workflow := &workflow{
 		log:     &mockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
 		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	_, err := workflow.execute(nil)
+	if err != errNoExcution {
+		t.Error(err, "should fail")
+	}
+}
+
+func Test_start_no_envs(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{{Name: "version", Value: "version"}},
 		state:   &stateMockClient{},
 	}
 	e := execStruct{
@@ -200,6 +216,12 @@ func Test_start_no_envs(t *testing.T) {
 		e.Command = "powershell"
 		e.Args = []string{"-Command", "Get-Content config.go -Wait"}
 	}
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Error(err, "start failed")
+		t.FailNow()
+	}
+	workflow.basedir = dir
 	p, err := workflow.start(&e)
 	if err != nil {
 		t.Error(err, "start failed")
@@ -211,6 +233,10 @@ func Test_start_no_envs(t *testing.T) {
 	err = p.Kill()
 	if err != nil {
 		t.Error(err, "kill failed")
+	}
+	err = os.RemoveAll(dir)
+	if err != nil {
+		t.Error(err, "should remove all files")
 	}
 }
 
@@ -236,13 +262,28 @@ func Test_start_and_fail_command(t *testing.T) {
 	}
 }
 
-func Test_rstart_with_envs(t *testing.T) {
+func Test_start_without_exec(t *testing.T) {
 	workflow := &workflow{
 		log:     &mockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
 		envs:    envVars{},
+		state:   &stateMockClient{},
+	}
+	_, err := workflow.start(nil)
+	if err != errNoExcution {
+		t.Error(err, "should fail")
+	}
+}
+
+func Test_start_with_envs(t *testing.T) {
+	workflow := &workflow{
+		log:     &mockLogger{},
+		version: "version",
+		name:    "deploy",
+		basedir: ".",
+		envs:    envVars{{Name: "version", Value: "version"}},
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
@@ -261,6 +302,12 @@ func Test_rstart_with_envs(t *testing.T) {
 		t.Error(err, "should be able to convert envs")
 		t.FailNow()
 	}
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Error(err, "start failed")
+		t.FailNow()
+	}
+	workflow.basedir = dir
 	p, err := workflow.start(e)
 	if err != nil {
 		t.Error(err, "start failed")
@@ -272,5 +319,9 @@ func Test_rstart_with_envs(t *testing.T) {
 	err = p.Kill()
 	if err != nil {
 		t.Error(err, "kill failed")
+	}
+	err = os.RemoveAll(dir)
+	if err != nil {
+		t.Error(err, "should remove all files")
 	}
 }
