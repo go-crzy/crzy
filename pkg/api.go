@@ -26,14 +26,12 @@ type verHandler struct {
 }
 
 func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	version := r.URL.Path[13:]
-	// TODO: si une personne tape /v0/versions/abc sans rien derriere,
-	// renvoyer listVersionDetails
-
-	body := strings.Split(version, "/")
-	if len(body) == 1 {
-		output, err := v.state.state.listVersionDetails(r.URL.Path[13:])
+	route := r.URL.Path[13:]
+	keys := strings.Split(route, "/")
+	if len(keys) == 1 {
+		output, err := v.state.state.listVersionDetails(keys[0])
 		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte(`{"message":"not found"}`))
 			return
 		}
@@ -41,8 +39,8 @@ func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(body) == 2 && (body[1] == "log" || body[1] == "err") {
-		output, err := v.state.state.logVersion(body[0], body[1])
+	if len(keys) == 2 && (keys[1] == "log" || keys[1] == "err") {
+		output, err := v.state.state.logVersion(keys[0], keys[1])
 		if err != nil {
 			w.Write([]byte(`{"message":"not found"}`))
 			return
@@ -50,11 +48,7 @@ func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(output))
 		return
 	}
-
 	w.Write([]byte(`{"message":"error"}`))
-
-	// Sinon si une personne renvoie /v0/versions/abc/log ou /v0/versions/abc/err,
-	// renvoyer state.logVersion(version, "log") ou state.logVersion(version, "err")
 }
 
 type actionHandler struct{}
@@ -68,12 +62,14 @@ func (a *actionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&p)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(`{"message":"bad request"}`))
 		return
 	}
 	if p.Command == "start" {
 		w.Write([]byte(`{"message":"started"}`))
 		return
 	}
-	w.Write([]byte(`{"message":"failed"}`))
+	w.WriteHeader(http.StatusBadRequest)
+	w.Write([]byte(`{"message":"bad request"}`))
 }

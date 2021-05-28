@@ -11,6 +11,8 @@ type file struct {
 	filename string
 }
 
+// Write appends data to the file or create it if it does not exist. By closing
+// the file after each write, this allow to read the file on Windows
 func (f *file) Write(p []byte) (int, error) {
 	f.Lock()
 	defer f.Unlock()
@@ -22,6 +24,7 @@ func (f *file) Write(p []byte) (int, error) {
 	return file.Write(p)
 }
 
+// ReadLines reads limit or less lines starting with offset from the file.
 func (f *file) ReadLines(offset, limit int) ([]string, error) {
 	f.Lock()
 	defer f.Unlock()

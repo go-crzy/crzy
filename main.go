@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/go-crzy/crzy/pkg"
 )
 
@@ -12,5 +14,5 @@ var (
 )
 
 func main() {
-	pkg.Startup(version, commit, date, builtBy)
+	pkg.Startup(context.Background(), version, commit, date, builtBy)
 }

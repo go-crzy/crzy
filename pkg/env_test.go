@@ -47,6 +47,14 @@ func Test_replaceEnv_and_failure(t *testing.T) {
 	}
 }
 
+func Test_replaceEnv_duplicate_key(t *testing.T) {
+	envs := newEnvVars(envVar{Name: "VERSION", Value: "1.0"}, envVar{Name: "VERSION", Value: "2.0"})
+
+	if _, err := envs.replace("abc"); err != errDuplicateKeys {
+		t.Error("should fail with errDuplicateKeys, error:", err)
+	}
+}
+
 func Test_groupEnvs_and_succeed(t *testing.T) {
 	input := envVars{{Name: "VERSION", Value: "1.0"}, {Name: "PORT", Value: "8080"}}
 	mapOfEnvs, err := input.toMap()
