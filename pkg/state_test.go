@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -15,6 +16,9 @@ func (m *mockState) listVersions() []byte {
 }
 
 func (m *mockState) listVersionDetails(version string) ([]byte, error) {
+	if version == "fail" {
+		return nil, errors.New("error")
+	}
 	return []byte(`{"runners": {"deploy": {} }}`), nil
 }
 
@@ -23,6 +27,9 @@ func (m *mockState) addStep(stepEvent) {
 }
 
 func (s *mockState) logVersion(version, file string) ([]byte, error) {
+	if version == "fail" {
+		return nil, errors.New("error")
+	}
 	return []byte("line1\nline2"), nil
 }
 

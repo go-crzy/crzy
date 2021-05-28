@@ -1,7 +1,14 @@
 package pkg
 
-import "testing"
+import (
+	"context"
+	"os"
+	"testing"
+)
 
 func Test_Startup(t *testing.T) {
-	// Startup("dev", "ubknown", "", "")
+	ctx, cancel := context.WithCancel(context.TODO())
+	os.Args = []string{"crzy", "-repository", "color.git", "-color", "-head", "example"}
+	go Startup(ctx, "", "", "", "")
+	cancel()
 }

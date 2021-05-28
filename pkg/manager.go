@@ -11,18 +11,24 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var ErrVersionRequested = errors.New("version")
+
 type runContainer struct {
 	Log    logr.Logger
 	Config config
 }
 
-func Startup(version, commit, date, builtBy string) {
+func Startup(ctx context.Context, version, commit, date, builtBy string) {
 	log := newCrzyLogger("main", false)
 	run := &runContainer{Log: log}
-	run.Config = run.parse(version, commit)
+	var err error
+	run.Config, err = run.parse(version, commit)
+	if err == ErrVersionRequested {
+		os.Exit(0)
+	}
 	log = newCrzyLogger("main", run.Config.Main.Color)
 	run.Log = log
-	group, ctx := errgroup.WithContext(context.Background())
+	group, ctx := errgroup.WithContext(ctx)
 	store, err := run.createStore()
 	if err != nil {
 		os.Exit(1)
@@ -66,7 +72,13 @@ func Startup(version, commit, date, builtBy string) {
 	}
 }
 
-func (r *runContainer) parse(version, commit string) config {
+func (r *runContainer) parse(version, commit string) (config, error) {
+	if version == "" {
+		version = "dev"
+	}
+	if commit == "" {
+		commit = "unknown"
+	}
 	configFile := ""
 	repository := ""
 	head := ""
@@ -79,14 +91,8 @@ func (r *runContainer) parse(version, commit string) config {
 	flag.BoolVar(&v, "version", false, "display the version")
 	flag.Parse()
 	if v {
-		if version == "" {
-			version = "dev"
-		}
-		if commit == "" {
-			commit = "unknown"
-		}
 		fmt.Printf("crzy version %s(%s)\n", version, commit)
-		os.Exit(0)
+		return config{}, ErrVersionRequested
 	}
 	conf, _ := getConfig(defaultLanguage, configFile)
 	if repository != "myrepo" || conf.Main.Repository == "" {
@@ -98,5 +104,5 @@ func (r *runContainer) parse(version, commit string) config {
 	if colorize {
 		conf.Main.Color = colorize
 	}
-	return *conf
+	return *conf, nil
 }

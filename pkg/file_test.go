@@ -27,7 +27,7 @@ func Test_file_write(t *testing.T) {
 	}
 }
 
-func Test_file_readlines(t *testing.T) {
+func Test_file_readlines_and_succeed(t *testing.T) {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Error(err, "should succeed")
@@ -56,5 +56,21 @@ func Test_file_readlines(t *testing.T) {
 	if len(str) != 1 || str[0] != "line2" {
 		t.Error("should return line2, value:", str[0])
 	}
+}
 
+func Test_file_readlines_and_fails(t *testing.T) {
+	dir, err := os.MkdirTemp("", "")
+	if err != nil {
+		t.Error(err, "should succeed")
+		t.FailNow()
+	}
+	defer os.RemoveAll(dir)
+	filename := path.Join(dir, "doesnotexist/file_write.txt")
+	c := &file{
+		filename: filename,
+	}
+	_, err = c.ReadLines(1, 1)
+	if err == nil {
+		t.Error("should fail du4 to wrong directory")
+	}
 }
