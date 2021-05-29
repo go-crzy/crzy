@@ -2,12 +2,14 @@ package pkg
 
 import (
 	"testing"
+
+	log "github.com/go-crzy/crzy/logr"
 )
 
 // Test_StoreCreateAndDelete
 func Test_storeCreateAndDelete(t *testing.T) {
 	run := runContainer{
-		Log: &mockLogger{},
+		Log: &log.MockLogger{},
 	}
 	store, err := run.createStore()
 	if err != nil {
@@ -24,7 +26,7 @@ func Test_storeCreateAndDelete(t *testing.T) {
 func Test_storeDelete_and_fail(t *testing.T) {
 	s := &store{
 		rootDir: "/doesnotexist",
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 	}
 	err := s.delete()
 	if err != nil {

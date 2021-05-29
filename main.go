@@ -14,5 +14,5 @@ var (
 )
 
 func main() {
-	pkg.Startup(context.Background(), version, commit, date, builtBy)
+	pkg.NewCrzy().Run(context.Background(), version, commit, date, builtBy)
 }

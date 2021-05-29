@@ -46,6 +46,7 @@ type stepEvent struct {
 }
 
 type state interface {
+	getConfiguration() []byte
 	listVersions() []byte
 	listVersionDetails(string) ([]byte, error)
 	addStep(stepEvent)
@@ -54,7 +55,8 @@ type state interface {
 
 type defaultState struct {
 	sync.Mutex
-	state map[string]syntheticWorkflow
+	configuration *configuration
+	state         map[string]syntheticWorkflow
 }
 
 type stateManager struct {
@@ -94,6 +96,9 @@ func (r *runContainer) newStateManager() *stateManager {
 	return &stateManager{
 		notifier: make(chan stepEvent),
 		state: &defaultState{
+			configuration: &configuration{
+				Head: r.Config.Main.Head,
+			},
 			state: map[string]syntheticWorkflow{},
 		},
 		log: r.Log.WithName("state"),
@@ -135,6 +140,12 @@ func (s *defaultState) listVersions() []byte {
 	}
 	output, _ := json.Marshal(&data)
 	return output
+}
+
+func (s *defaultState) getConfiguration() []byte {
+	s.Lock()
+	defer s.Unlock()
+	return []byte(`{"head": "main"}`)
 }
 
 var (

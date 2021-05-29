@@ -8,12 +8,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_newHTTPListener_and_success(t *testing.T) {
 	r := &runContainer{
-		Log: &mockLogger{},
+		Log: &log.MockLogger{},
 	}
 	v, err := r.newHTTPListener(":8999")
 	if err != nil {
@@ -33,7 +34,7 @@ func Test_newHTTPListener_and_success(t *testing.T) {
 
 func Test_newHTTPListener_and_fail(t *testing.T) {
 	r := &runContainer{
-		Log: &mockLogger{},
+		Log: &log.MockLogger{},
 	}
 	_, err := r.newHTTPListener("abc")
 	if err == nil {
@@ -47,7 +48,7 @@ func Test_loggingMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("hello"))
 	})
-	server := httptest.NewServer(loggingMiddleware(newCrzyLogger("demo", false), handler))
+	server := httptest.NewServer(loggingMiddleware(&log.MockLogger{}, handler))
 	client := server.Client()
 
 	request, _ := http.NewRequest("Get", server.URL, nil)
@@ -71,7 +72,7 @@ func Test_run_and_cancel(t *testing.T) {
 	}
 	lsnr := &HTTPListener{
 		errc: errc,
-		log:  &mockLogger{},
+		log:  &log.MockLogger{},
 		lsnr: l,
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
@@ -94,7 +95,7 @@ func Test_run_and_no_error(t *testing.T) {
 	}
 	lsnr := &HTTPListener{
 		errc: errc,
-		log:  &mockLogger{},
+		log:  &log.MockLogger{},
 		lsnr: l,
 	}
 	g, ctx := errgroup.WithContext(context.TODO())
@@ -116,7 +117,7 @@ func Test_run_and_error(t *testing.T) {
 	}
 	lsnr := &HTTPListener{
 		errc: errc,
-		log:  &mockLogger{},
+		log:  &log.MockLogger{},
 		lsnr: l,
 	}
 	g, ctx := errgroup.WithContext(context.TODO())

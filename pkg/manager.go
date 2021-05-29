@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	log "github.com/go-crzy/crzy/logr"
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/errgroup"
 )
@@ -18,15 +19,28 @@ type runContainer struct {
 	Config config
 }
 
-func Startup(ctx context.Context, version, commit, date, builtBy string) {
-	log := newCrzyLogger("main", false)
+type Runner interface {
+	Run(ctx context.Context, version, commit, date, builtBy string)
+}
+
+type defaultRunner struct {
+	log logr.Logger
+}
+
+func NewCrzy() Runner {
+	return &defaultRunner{
+		log: log.NewLogger("", log.OptionColor),
+	}
+}
+
+func (c *defaultRunner) Run(ctx context.Context, version, commit, date, builtBy string) {
+	log := c.log.WithName("main")
 	run := &runContainer{Log: log}
 	var err error
 	run.Config, err = run.parse(version, commit)
 	if err == ErrVersionRequested {
 		os.Exit(0)
 	}
-	log = newCrzyLogger("main", run.Config.Main.Color)
 	run.Log = log
 	group, ctx := errgroup.WithContext(ctx)
 	store, err := run.createStore()
