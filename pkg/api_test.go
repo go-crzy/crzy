@@ -8,242 +8,151 @@ import (
 	"testing"
 )
 
-func TestApiVersion(t *testing.T) {
-	handler := &versionHandler{}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/version", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != "version" {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
+type sample struct {
+	name   string
+	method string
+	route  string
+	input  string
+	status int
+	output string
 }
 
-func TestApiVersions(t *testing.T) {
-	handler := &versionsHandler{
-		state: &stateManager{state: &mockState{}},
-	}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/versions", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != `{"versions": ["123"]}` {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
+var data = []sample{
+	{
+		name:   `get_on_configuration_and_succeed`,
+		method: http.MethodGet,
+		route:  "/v0/configuration",
+		input:  "{}",
+		status: http.StatusOK,
+		output: `{"message":"bad request"}`,
+	},
+	{
+		name:   `put_on_configuration_and_fail`,
+		method: http.MethodPut,
+		route:  "/v0/configuration",
+		input:  `wrong`,
+		status: http.StatusBadRequest,
+		output: `{"message":"bad request"}`,
+	},
+	{
+		name:   `put_on_configuration_and_succeed`,
+		method: http.MethodPut,
+		route:  "/v0/configuration",
+		input:  `{"head": "main"}`,
+		status: http.StatusOK,
+		output: `{"message":"bad request"}`,
+	},
+	{
+		name:   `get_on_unknowversionssubcommand_and_fail`,
+		method: http.MethodGet,
+		route:  "/v0/versions/xxx/unknown",
+		input:  ``,
+		status: http.StatusOK,
+		output: `{"message":"error"}`,
+	},
+	{
+		name:   `get_on_versions_and_fail`,
+		method: http.MethodGet,
+		route:  "/v0/versions/fail/log",
+		input:  ``,
+		status: http.StatusNotFound,
+		output: `{"message":"not found"}`,
+	},
+	{
+		name:   `get_on_versions_and_succeed`,
+		method: http.MethodGet,
+		route:  "/v0/versions/xxx/log",
+		input:  ``,
+		status: http.StatusOK,
+		output: "line1\nline2",
+	},
+	{
+		name:   `post_on_action_and_fails_due_to_payload`,
+		method: http.MethodPost,
+		route:  "/v0/actions",
+		input:  `wrong data`,
+		status: http.StatusBadRequest,
+		output: `{"message":"bad request"}`,
+	},
+	{
+		name:   `post_on_action_and_fails_due_to_payload`,
+		method: http.MethodPost,
+		route:  "/v0/actions",
+		input:  `{"action": "unknown"}`,
+		status: http.StatusBadRequest,
+		output: `{"message":"bad request"}`,
+	},
+	{
+		name:   `post_on_action_and_succeed`,
+		method: http.MethodPost,
+		route:  "/v0/actions",
+		input:  `{"command": "start"}`,
+		status: http.StatusOK,
+		output: `{"message":"started"}`,
+	},
+	{
+		name:   `get_on_one_version_and_fails`,
+		method: http.MethodGet,
+		route:  "/v0/versions/fail",
+		input:  ``,
+		status: http.StatusNotFound,
+		output: `{"message":"not found"}`,
+	},
+	{
+		name:   `get_on_one_version_and_succeeds`,
+		method: http.MethodGet,
+		route:  "/v0/versions/xxx",
+		input:  ``,
+		status: http.StatusOK,
+		output: `{"runners": {"deploy": {} }}`,
+	},
+	{
+		name:   `get_on_version_and_succeeds`,
+		method: http.MethodGet,
+		route:  "/v0/version",
+		input:  ``,
+		status: http.StatusOK,
+		output: `version`,
+	},
+	{
+		name:   `get_on_versions_and_succeeds`,
+		method: http.MethodGet,
+		route:  "/v0/versions",
+		input:  ``,
+		status: http.StatusOK,
+		output: `{"versions": ["123"]}`,
+	},
 }
 
-func Test_listVersionDetails_succeed(t *testing.T) {
-	handler := &verHandler{
-		state: &stateManager{state: &mockState{}},
-	}
-	server := httptest.NewServer(handler)
+func Test_configuration_success(t *testing.T) {
+	mux := newAPI(&stateManager{state: &mockState{}})
+	server := httptest.NewServer(mux)
 	client := server.Client()
 
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/versions/xxx", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != `{"runners": {"deploy": {} }}` {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
-}
-
-func Test_listVersionDetails_fails(t *testing.T) {
-	handler := &verHandler{
-		state: &stateManager{state: &mockState{}},
-	}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/versions/fail", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusNotFound {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != `{"message":"not found"}` {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
-}
-
-func Test_action_succeed(t *testing.T) {
-	handler := &actionHandler{}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodPost, server.URL+"/v0/actions", bytes.NewBufferString(`{"command":"start"}`))
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != `{"message":"started"}` {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
-}
-
-func Test_action_fails_payload(t *testing.T) {
-	payloads := []string{`wrong data`, `{"action": "unknown"}`}
-	handler := &actionHandler{}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	for _, v := range payloads {
-		request, _ := http.NewRequest(http.MethodPost, server.URL+"/v0/actions", bytes.NewBufferString(v))
+	for _, v := range data {
+		t.Logf("testing %s", v.name)
+		payload := &bytes.Buffer{}
+		if len(v.input) > 0 {
+			payload = bytes.NewBuffer([]byte(v.input))
+		}
+		request, _ := http.NewRequest(v.method, server.URL+v.route, payload)
 		response, err := client.Do(request)
 		if err != nil {
 			t.Errorf("Should not return %v", err)
 		}
-		if response.StatusCode != http.StatusBadRequest {
+		if response.StatusCode != v.status {
 			t.Errorf(
-				"Status Code should be 400, current: %d",
+				"status should be %d, current: %d",
+				v.status,
 				response.StatusCode,
 			)
 		}
 		body, err := io.ReadAll(response.Body)
 		if err != nil {
-			t.Errorf("Should not return %v", err)
+			t.Errorf("body should work %v", err)
 		}
-		if string(body) != `{"message":"bad request"}` {
-			t.Errorf("unexpexted data: %s", string(body))
+		if string(body) != v.output {
+			t.Errorf("expect %s, get: %s", v.output, string(body))
 		}
-	}
-}
-
-func Test_logVersion_succeed(t *testing.T) {
-	handler := &verHandler{
-		state: &stateManager{state: &mockState{}},
-	}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/versions/xxx/log", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != "line1\nline2" {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
-}
-
-func Test_logVersion_fails(t *testing.T) {
-	handler := &verHandler{
-		state: &stateManager{state: &mockState{}},
-	}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/versions/fail/log", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != `{"message":"not found"}` {
-		t.Errorf("Expecting version, get: %s", string(body))
-	}
-}
-
-func Test_unknownroute_fails(t *testing.T) {
-	handler := &verHandler{
-		state: &stateManager{state: &mockState{}},
-	}
-	server := httptest.NewServer(handler)
-	client := server.Client()
-
-	request, _ := http.NewRequest(http.MethodGet, server.URL+"/v0/versions/xxx/unknown", nil)
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		t.Errorf(
-			"Status Code should be 200, current: %d",
-			response.StatusCode,
-		)
-	}
-	body, err := io.ReadAll(response.Body)
-	if err != nil {
-		t.Errorf("Should not return %v", err)
-	}
-	if string(body) != `{"message":"error"}` {
-		t.Errorf("Expecting version, get: %s", string(body))
 	}
 }

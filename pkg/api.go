@@ -42,6 +42,7 @@ func (v *verHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(keys) == 2 && (keys[1] == "log" || keys[1] == "err") {
 		output, err := v.state.state.logVersion(keys[0], keys[1])
 		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte(`{"message":"not found"}`))
 			return
 		}
@@ -72,4 +73,35 @@ func (a *actionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusBadRequest)
 	w.Write([]byte(`{"message":"bad request"}`))
+}
+
+type configHandler struct{}
+
+type configuration struct {
+	Head string
+}
+
+func (c *configHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	var config configuration
+
+	if r.Method == http.MethodPut {
+		err := json.NewDecoder(r.Body).Decode(&config)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"message":"bad request"}`))
+			return
+		}
+	}
+	w.Write([]byte(`{"message":"bad request"}`))
+}
+
+func newAPI(state *stateManager) http.Handler {
+	mux := http.NewServeMux()
+	mux.Handle("/v0/version", &versionHandler{})
+	mux.Handle("/v0/versions", &versionsHandler{state: state})
+	mux.Handle("/v0/versions/", &verHandler{state: state})
+	mux.Handle("/v0/actions", &actionHandler{})
+	mux.Handle("/v0/configuration", &configHandler{})
+	return mux
 }
