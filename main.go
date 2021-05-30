@@ -2,17 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/go-crzy/crzy/pkg"
-)
-
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
-	builtBy = "unknown"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
-	pkg.Startup(context.Background(), version, commit, date, builtBy)
+	group, ctx := errgroup.WithContext(context.Background())
+	group.Go(func() error { return pkg.NewCrzy().Run(ctx) })
+	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		fmt.Println("error detected: ", err)
+	}
 }

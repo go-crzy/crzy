@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -22,7 +23,7 @@ func Test_workflowsAndCancel(t *testing.T) {
 		},
 	}
 	r := runContainer{
-		Log:    &mockLogger{},
+		Log:    &log.MockLogger{},
 		Config: conf,
 	}
 	g := new(errgroup.Group)
@@ -36,7 +37,7 @@ func Test_workflowsAndCancel(t *testing.T) {
 	g.Go(func() error {
 		return r.createAndStartWorkflows(ctx, &stateManager{
 			notifier: make(chan stepEvent),
-			log:      &mockLogger{},
+			log:      &log.MockLogger{},
 			state:    &defaultState{},
 		},
 			git,
@@ -64,7 +65,7 @@ func Test_workflowsAndFail(t *testing.T) {
 		},
 	}
 	r := runContainer{
-		Log:    &mockLogger{},
+		Log:    &log.MockLogger{},
 		Config: conf,
 	}
 	startTrigger := make(chan event)
@@ -77,7 +78,7 @@ func Test_workflowsAndFail(t *testing.T) {
 		context.TODO(),
 		&stateManager{
 			notifier: make(chan stepEvent),
-			log:      &mockLogger{},
+			log:      &log.MockLogger{},
 			state:    &defaultState{},
 		},
 		git,
@@ -91,7 +92,7 @@ func Test_workflowsAndFail(t *testing.T) {
 
 func Test_execute_and_succeed(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -99,7 +100,7 @@ func Test_execute_and_succeed(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "git",
 		Args:    []string{"version"},
 		WorkDir: ".",
@@ -114,7 +115,7 @@ func Test_execute_and_succeed(t *testing.T) {
 
 func Test_execute_and_succeed_with_output(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -122,7 +123,7 @@ func Test_execute_and_succeed_with_output(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "git",
 		Args:    []string{"version"},
 		WorkDir: ".",
@@ -141,7 +142,7 @@ func Test_execute_and_succeed_with_output(t *testing.T) {
 
 func Test_execute_and_fail_command(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -149,7 +150,7 @@ func Test_execute_and_fail_command(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
@@ -164,7 +165,7 @@ func Test_execute_and_fail_command(t *testing.T) {
 
 func Test_execute_and_fail_combinedoutput(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -172,7 +173,7 @@ func Test_execute_and_fail_combinedoutput(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "doesnotexist",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
@@ -189,7 +190,7 @@ func Test_execute_and_fail_combinedoutput(t *testing.T) {
 
 func Test_execute_without_exec(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -204,7 +205,7 @@ func Test_execute_without_exec(t *testing.T) {
 
 func Test_start_no_envs(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -212,7 +213,7 @@ func Test_start_no_envs(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
@@ -248,7 +249,7 @@ func Test_start_no_envs(t *testing.T) {
 
 func Test_start_and_fail_command(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -256,7 +257,7 @@ func Test_start_and_fail_command(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
@@ -270,7 +271,7 @@ func Test_start_and_fail_command(t *testing.T) {
 
 func Test_start_without_exec(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -285,7 +286,7 @@ func Test_start_without_exec(t *testing.T) {
 
 func Test_start_with_envs(t *testing.T) {
 	workflow := &workflow{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		version: "version",
 		name:    "deploy",
 		basedir: ".",
@@ -293,7 +294,7 @@ func Test_start_with_envs(t *testing.T) {
 		state:   &stateMockClient{},
 	}
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",

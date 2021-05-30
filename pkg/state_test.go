@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,9 +34,13 @@ func (s *mockState) logVersion(version, file string) ([]byte, error) {
 	return []byte("line1\nline2"), nil
 }
 
+func (s *mockState) getConfiguration() []byte {
+	return []byte(`{"head": "main"}`)
+}
+
 func Test_newStateManager(t *testing.T) {
 	r := &runContainer{
-		Log: &mockLogger{},
+		Log: &log.MockLogger{},
 	}
 	v := r.newStateManager()
 	stateClient := &stateDefaultClient{

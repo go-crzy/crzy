@@ -7,13 +7,14 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_triggerWorkflow_and_succeed(t *testing.T) {
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
-		log:           &mockLogger{},
+		log:           &log.MockLogger{},
 		command:       &mockTriggerCommand{output: true},
 		head:          "main",
 		git:           &mockGitSuccessCommand{},
@@ -44,7 +45,7 @@ func Test_triggerWorkflow_and_fail(t *testing.T) {
 	command := &mockTriggerCommand{output: true}
 	trigger := &triggerWorkflow{
 		triggerStruct: triggerStruct{},
-		log:           &mockLogger{},
+		log:           &log.MockLogger{},
 		command:       command,
 		head:          "main",
 		git:           &mockGitSuccessCommand{},
@@ -95,7 +96,7 @@ func Test_versionCommand(t *testing.T) {
 			},
 		},
 		state: &stateMockClient{},
-		log:   &mockLogger{},
+		log:   &log.MockLogger{},
 	}
 	if runtime.GOOS == "windows" {
 		w.triggerStruct.Version = versionStruct{
@@ -104,7 +105,7 @@ func Test_versionCommand(t *testing.T) {
 		}
 	}
 	version := &defaultTriggerCommand{}
-	version.setTriggerWorkflow(*w)
+	version.setTriggerWorkflow(w)
 	x, err := version.version()
 	if err != nil || x[0:1] != "1" {
 		t.Error("version should succeed and return 1|" + x + "|")
@@ -126,13 +127,13 @@ func Test_defaultTriggerCommand(t *testing.T) {
 			store: store{
 				workdir: dir,
 			},
-			log: &mockLogger{},
+			log: &log.MockLogger{},
 		},
-		log:   &mockLogger{},
+		log:   &log.MockLogger{},
 		state: &stateMockClient{},
 	}
 	version := &defaultTriggerCommand{}
-	version.setTriggerWorkflow(*w)
+	version.setTriggerWorkflow(w)
 	x, err := version.version()
 	if err != nil || len(x) != 16 {
 		t.Error("version should be 16 length", x)
@@ -154,13 +155,13 @@ func Test_defaultTriggerCommand_with_error(t *testing.T) {
 			store: store{
 				workdir: dir,
 			},
-			log: &mockLogger{},
+			log: &log.MockLogger{},
 		},
-		log:   &mockLogger{},
+		log:   &log.MockLogger{},
 		state: &stateMockClient{},
 	}
 	version := &defaultTriggerCommand{}
-	version.setTriggerWorkflow(*w)
+	version.setTriggerWorkflow(w)
 	_, err := version.version()
 	if err == nil || err.Error()[0:4] != "exec" {
 		t.Error("should return an error with execution", err)

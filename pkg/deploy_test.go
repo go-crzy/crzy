@@ -5,12 +5,13 @@ import (
 	"runtime"
 	"testing"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_deployWorkflow_and_succeed(t *testing.T) {
 	deploy := &deployWorkflow{
-		log:          &mockLogger{},
+		log:          &log.MockLogger{},
 		deployStruct: deployStruct{},
 		workspace:    ".",
 		execdir:      ".",
@@ -60,7 +61,7 @@ func Test_deployWorkflow_and_succeed(t *testing.T) {
 
 func Test_deployWorkflow_and_fail(t *testing.T) {
 	deploy := &deployWorkflow{
-		log:          &mockLogger{},
+		log:          &log.MockLogger{},
 		deployStruct: deployStruct{},
 		keys: map[string]execStruct{
 			"test": {

@@ -7,19 +7,20 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_releaseWorkflow(t *testing.T) {
 	release := &releaseWorkflow{
-		log: &mockLogger{},
+		log: &log.MockLogger{},
 		releaseStruct: releaseStruct{
 			PortRange: portRangeStruct{
 				Min: 8090,
 				Max: 8100,
 			},
 			Run: execStruct{
-				log:     &mockLogger{},
+				log:     &log.MockLogger{},
 				Command: "tail",
 				Args:    []string{"-f", "config.go"},
 				WorkDir: ".",

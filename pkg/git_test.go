@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 	"testing"
+
+	log "github.com/go-crzy/crzy/logr"
 )
 
 func Test_newDefaultGitCommand(t *testing.T) {
@@ -16,10 +18,10 @@ func Test_newDefaultGitCommand(t *testing.T) {
 		execDir: "/root/execs",
 		repoDir: "/root/repository",
 		workdir: "/root/workspace",
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 	}
 	r := &runContainer{
-		Log:    &mockLogger{},
+		Log:    &log.MockLogger{},
 		Config: config{},
 	}
 	g, err := r.newDefaultGitCommand(store)
@@ -63,10 +65,10 @@ func Test_newGitServer(t *testing.T) {
 		execDir: path.Join(tmpdir, "execs"),
 		repoDir: path.Join(tmpdir, "repository"),
 		workdir: path.Join(tmpdir, "workspace"),
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 	}
 	r := &runContainer{
-		Log:    &mockLogger{},
+		Log:    &log.MockLogger{},
 		Config: config{},
 	}
 	action := make(chan event)

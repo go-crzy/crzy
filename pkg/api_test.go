@@ -18,110 +18,19 @@ type sample struct {
 }
 
 var data = []sample{
-	{
-		name:   `get_on_configuration_and_succeed`,
-		method: http.MethodGet,
-		route:  "/v0/configuration",
-		input:  "{}",
-		status: http.StatusOK,
-		output: `{"message":"bad request"}`,
-	},
-	{
-		name:   `put_on_configuration_and_fail`,
-		method: http.MethodPut,
-		route:  "/v0/configuration",
-		input:  `wrong`,
-		status: http.StatusBadRequest,
-		output: `{"message":"bad request"}`,
-	},
-	{
-		name:   `put_on_configuration_and_succeed`,
-		method: http.MethodPut,
-		route:  "/v0/configuration",
-		input:  `{"head": "main"}`,
-		status: http.StatusOK,
-		output: `{"message":"bad request"}`,
-	},
-	{
-		name:   `get_on_unknowversionssubcommand_and_fail`,
-		method: http.MethodGet,
-		route:  "/v0/versions/xxx/unknown",
-		input:  ``,
-		status: http.StatusOK,
-		output: `{"message":"error"}`,
-	},
-	{
-		name:   `get_on_versions_and_fail`,
-		method: http.MethodGet,
-		route:  "/v0/versions/fail/log",
-		input:  ``,
-		status: http.StatusNotFound,
-		output: `{"message":"not found"}`,
-	},
-	{
-		name:   `get_on_versions_and_succeed`,
-		method: http.MethodGet,
-		route:  "/v0/versions/xxx/log",
-		input:  ``,
-		status: http.StatusOK,
-		output: "line1\nline2",
-	},
-	{
-		name:   `post_on_action_and_fails_due_to_payload`,
-		method: http.MethodPost,
-		route:  "/v0/actions",
-		input:  `wrong data`,
-		status: http.StatusBadRequest,
-		output: `{"message":"bad request"}`,
-	},
-	{
-		name:   `post_on_action_and_fails_due_to_payload`,
-		method: http.MethodPost,
-		route:  "/v0/actions",
-		input:  `{"action": "unknown"}`,
-		status: http.StatusBadRequest,
-		output: `{"message":"bad request"}`,
-	},
-	{
-		name:   `post_on_action_and_succeed`,
-		method: http.MethodPost,
-		route:  "/v0/actions",
-		input:  `{"command": "start"}`,
-		status: http.StatusOK,
-		output: `{"message":"started"}`,
-	},
-	{
-		name:   `get_on_one_version_and_fails`,
-		method: http.MethodGet,
-		route:  "/v0/versions/fail",
-		input:  ``,
-		status: http.StatusNotFound,
-		output: `{"message":"not found"}`,
-	},
-	{
-		name:   `get_on_one_version_and_succeeds`,
-		method: http.MethodGet,
-		route:  "/v0/versions/xxx",
-		input:  ``,
-		status: http.StatusOK,
-		output: `{"runners": {"deploy": {} }}`,
-	},
-	{
-		name:   `get_on_version_and_succeeds`,
-		method: http.MethodGet,
-		route:  "/v0/version",
-		input:  ``,
-		status: http.StatusOK,
-		output: `version`,
-	},
-	{
-		name:   `get_on_versions_and_succeeds`,
-		method: http.MethodGet,
-		route:  "/v0/versions",
-		input:  ``,
-		status: http.StatusOK,
-		output: `{"versions": ["123"]}`,
-	},
+	{name: `get_on_version_and_succeeds`, method: http.MethodGet, route: "/v0/version", input: ``, status: http.StatusOK, output: `version`},
+	{name: `get_on_versions_and_succeeds`, method: http.MethodGet, route: "/v0/versions", input: ``, status: http.StatusOK, output: `{"versions": ["123"]}`},
+	{name: `get_on_versions_and_fail`, method: http.MethodGet, route: "/v0/versions/fail/log", input: ``, status: http.StatusNotFound, output: `{"message":"not found"}`},
+	{name: `get_on_one_version_and_succeeds`, method: http.MethodGet, route: "/v0/versions/xxx", input: ``, status: http.StatusOK, output: `{"runners": {"deploy": {} }}`},
+	{name: `get_on_one_version_and_fails`, method: http.MethodGet, route: "/v0/versions/fail", input: ``, status: http.StatusNotFound, output: `{"message":"not found"}`},
+	{name: `get_on_one_version_subcommand_and_succeeds`, method: http.MethodGet, route: "/v0/versions/xxx/log", input: ``, status: http.StatusOK, output: "line1\nline2"},
+	{name: `get_on_one_version_subcommand_and_fails`, method: http.MethodGet, route: "/v0/versions/xxx/unknown", input: ``, status: http.StatusOK, output: `{"message":"error"}`},
+	{name: `get_on_configuration_and_succeed`, method: http.MethodGet, route: "/v0/configuration", input: "{}", status: http.StatusOK, output: `{"message":"bad request"}`},
+	{name: `put_on_configuration_and_succeed`, method: http.MethodPut, route: "/v0/configuration", input: `{"head": "main"}`, status: http.StatusOK, output: `{"message":"bad request"}`},
+	{name: `put_on_configuration_and_fail`, method: http.MethodPut, route: "/v0/configuration", input: `wrong`, status: http.StatusBadRequest, output: `{"message":"bad request"}`},
+	{name: `post_on_action_and_succeed`, method: http.MethodPost, route: "/v0/actions", input: `{"command": "start"}`, status: http.StatusOK, output: `{"message":"started"}`},
+	{name: `post_on_action_and_fails_due_to_payload`, method: http.MethodPost, route: "/v0/actions", input: `wrong data`, status: http.StatusBadRequest, output: `{"message":"bad request"}`},
+	{name: `post_on_action_and_fails_due_to_payload`, method: http.MethodPost, route: "/v0/actions", input: `{"action": "unknown"}`, status: http.StatusBadRequest, output: `{"message":"bad request"}`},
 }
 
 func Test_configuration_success(t *testing.T) {
@@ -130,7 +39,6 @@ func Test_configuration_success(t *testing.T) {
 	client := server.Client()
 
 	for _, v := range data {
-		t.Logf("testing %s", v.name)
 		payload := &bytes.Buffer{}
 		if len(v.input) > 0 {
 			payload = bytes.NewBuffer([]byte(v.input))

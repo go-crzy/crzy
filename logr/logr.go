@@ -1,4 +1,4 @@
-package pkg
+package logr
 
 import (
 	"errors"
@@ -12,28 +12,62 @@ import (
 	"github.com/go-logr/logr"
 )
 
-func newCrzyLogger(name string, color bool) logr.Logger {
-	return &crzyLogger{
-		name:          name,
-		keysAndValues: map[string]string{},
-		out:           os.Stdout,
-		color:         color,
-	}
+var colorMap = map[string]color.Attribute{
+	"":        color.FgYellow,
+	"release": color.FgBlue,
+	"store":   color.FgCyan,
+	"http":    color.FgRed,
+	"main":    color.FgGreen,
+	"git":     color.FgHiYellow,
+	"deploy":  color.FgHiBlue,
+	"signal":  color.FgHiRed,
+	"trigger": color.FgHiGreen,
 }
 
-type crzyLogger struct {
+var errUnknown = errors.New("unknown")
+
+type defaultLogger struct {
 	color         bool
+	prefix        bool
 	name          string
 	keysAndValues map[string]string
 	level         int
 	out           io.Writer
 }
 
-func (c *crzyLogger) Enabled() bool {
+func OptionColor(l *defaultLogger) *defaultLogger {
+	l.color = true
+	return l
+}
+
+func OptionNoOutput(l *defaultLogger) *defaultLogger {
+	l.out = io.Discard
+	return l
+}
+
+func OptionNoPrefix(l *defaultLogger) *defaultLogger {
+	l.prefix = false
+	return l
+}
+
+func NewLogger(name string, f ...(func(l *defaultLogger) *defaultLogger)) logr.Logger {
+	log := &defaultLogger{
+		name:          name,
+		prefix:        true,
+		keysAndValues: map[string]string{},
+		out:           os.Stdout,
+	}
+	for _, v := range f {
+		log = v(log)
+	}
+	return log
+}
+
+func (c *defaultLogger) Enabled() bool {
 	return true
 }
 
-func (c *crzyLogger) Info(msg string, keysAndValues ...interface{}) {
+func (c *defaultLogger) Info(msg string, keysAndValues ...interface{}) {
 	switch len(keysAndValues) {
 	case 0:
 		c.Log("info", msg)
@@ -42,38 +76,40 @@ func (c *crzyLogger) Info(msg string, keysAndValues ...interface{}) {
 	}
 }
 
-func (c *crzyLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+func (c *defaultLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	switch len(keysAndValues) {
 	case 0:
 		if err == nil {
-			err = errors.New("unknown")
+			err = errUnknown
 		}
 		c.Log("error", "err:"+err.Error(), "msg", msg)
 	default:
 		keysAndValues = append(keysAndValues, "msg")
 		keysAndValues = append(keysAndValues, msg)
 		if err == nil {
-			err = errors.New("unknown")
+			err = errUnknown
 		}
 		c.Log("error", "err:"+err.Error(), keysAndValues...)
 	}
 }
 
-func (c *crzyLogger) V(level int) logr.Logger {
-	return &crzyLogger{
+func (c *defaultLogger) V(level int) logr.Logger {
+	return &defaultLogger{
 		out:           c.out,
 		color:         c.color,
 		name:          c.name,
+		prefix:        c.prefix,
 		keysAndValues: c.keysAndValues,
 		level:         level,
 	}
 }
 
-func (c *crzyLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
-	output := &crzyLogger{
+func (c *defaultLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
+	output := &defaultLogger{
 		out:           c.out,
 		color:         c.color,
 		name:          c.name,
+		prefix:        c.prefix,
 		keysAndValues: c.keysAndValues,
 		level:         c.level,
 	}
@@ -89,21 +125,29 @@ func (c *crzyLogger) WithValues(keysAndValues ...interface{}) logr.Logger {
 	return output
 }
 
-func (c *crzyLogger) WithName(name string) logr.Logger {
-	return &crzyLogger{
+func (c *defaultLogger) WithName(name string) logr.Logger {
+	return &defaultLogger{
 		out:           c.out,
 		color:         c.color,
 		name:          name,
+		prefix:        c.prefix,
 		keysAndValues: c.keysAndValues,
 		level:         c.level,
 	}
 }
 
-func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
-	log := fmt.Sprintf(
-		"%s [%-5s] %-10s %s",
+func (c *defaultLogger) Log(key string, msg string, keysAndValues ...interface{}) {
+	prefix := fmt.Sprintf(
+		"%s [%-5s] ",
 		time.Now().Format("15:04:05.000"),
 		key,
+	)
+	if !c.prefix {
+		prefix = ""
+	}
+	log := fmt.Sprintf(
+		"%s%-10s %s",
+		prefix,
 		c.name,
 		msg,
 	)
@@ -141,22 +185,12 @@ func (c *crzyLogger) Log(key string, msg string, keysAndValues ...interface{}) {
 	c.colorPrint(c.name, log)
 }
 
-func (c *crzyLogger) colorPrint(name, log string) {
+func (c *defaultLogger) colorPrint(name, log string) {
 	if !c.color {
 		fmt.Fprintln(c.out, log)
 		return
 	}
-	colorMap := map[string]color.Attribute{
-		"":        color.FgYellow,
-		"release": color.FgBlue,
-		"store":   color.FgCyan,
-		"http":    color.FgRed,
-		"main":    color.FgGreen,
-		"git":     color.FgHiYellow,
-		"deploy":  color.FgHiBlue,
-		"signal":  color.FgHiRed,
-		"trigger": color.FgHiGreen,
-	}
+
 	foreground, ok := colorMap[name]
 	if !ok {
 		foreground = color.FgMagenta
@@ -164,29 +198,29 @@ func (c *crzyLogger) colorPrint(name, log string) {
 	color.New(foreground).Fprintln(c.out, log)
 }
 
-type mockLogger struct {
+type MockLogger struct {
 	sync.Mutex
-	logs []string
+	Logs []string
 }
 
-func (l *mockLogger) Enabled() bool {
+func (l *MockLogger) Enabled() bool {
 	return true
 }
 
-func (l *mockLogger) Info(msg string, keysAndValues ...interface{}) {
+func (l *MockLogger) Info(msg string, keysAndValues ...interface{}) {
 	l.Lock()
 	defer l.Unlock()
-	l.logs = append(l.logs, msg)
+	l.Logs = append(l.Logs, msg)
 }
 
-func (l *mockLogger) Error(err error, msg string, keysAndValues ...interface{}) {
+func (l *MockLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	l.Lock()
 	defer l.Unlock()
-	l.logs = append(l.logs, msg)
+	l.Logs = append(l.Logs, msg)
 }
 
-func (l *mockLogger) V(level int) logr.Logger { return &mockLogger{} }
+func (l *MockLogger) V(level int) logr.Logger { return &MockLogger{} }
 
-func (c *mockLogger) WithValues(keysAndValues ...interface{}) logr.Logger { return &mockLogger{} }
+func (c *MockLogger) WithValues(keysAndValues ...interface{}) logr.Logger { return &MockLogger{} }
 
-func (c *mockLogger) WithName(name string) logr.Logger { return &mockLogger{} }
+func (c *MockLogger) WithName(name string) logr.Logger { return &MockLogger{} }

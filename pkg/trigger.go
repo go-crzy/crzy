@@ -26,7 +26,7 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy
 	deploying := false
 	triggered := false
 	command := w.command
-	command.setTriggerWorkflow(*w)
+	command.setTriggerWorkflow(w)
 	for {
 		select {
 		case action := <-action:
@@ -90,14 +90,14 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy
 
 type triggerCommand interface {
 	version() (string, error)
-	setTriggerWorkflow(triggerWorkflow)
+	setTriggerWorkflow(*triggerWorkflow)
 }
 
 type defaultTriggerCommand struct {
-	trigger triggerWorkflow
+	trigger *triggerWorkflow
 }
 
-func (d *defaultTriggerCommand) setTriggerWorkflow(w triggerWorkflow) {
+func (d *defaultTriggerCommand) setTriggerWorkflow(w *triggerWorkflow) {
 	d.trigger = w
 }
 
@@ -135,5 +135,5 @@ func (w *mockTriggerCommand) version() (string, error) {
 	return "1", errors.New("error")
 }
 
-func (d *mockTriggerCommand) setTriggerWorkflow(w triggerWorkflow) {
+func (d *mockTriggerCommand) setTriggerWorkflow(w *triggerWorkflow) {
 }

@@ -5,12 +5,13 @@ import (
 	"os"
 	"testing"
 
+	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
 
 func Test_newSignalWithInterrupt(t *testing.T) {
 	run := &runContainer{
-		Log: &mockLogger{},
+		Log: &log.MockLogger{},
 	}
 	signal := run.newSignalHandler()
 	g, ctx := errgroup.WithContext(context.TODO())
@@ -24,7 +25,7 @@ func Test_newSignalWithInterrupt(t *testing.T) {
 
 func Test_newSignalWithCancel(t *testing.T) {
 	run := &runContainer{
-		Log: &mockLogger{},
+		Log: &log.MockLogger{},
 	}
 	signal := run.newSignalHandler()
 	g, ctx := errgroup.WithContext(context.TODO())

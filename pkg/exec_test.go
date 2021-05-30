@@ -4,6 +4,8 @@ import (
 	"os/exec"
 	"runtime"
 	"testing"
+
+	log "github.com/go-crzy/crzy/logr"
 )
 
 func Test_getCmd_and_succeed(t *testing.T) {
@@ -48,7 +50,7 @@ func Test_killProcess(t *testing.T) {
 
 func Test_prepare_and_fail_command(t *testing.T) {
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "${xxx}",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
@@ -62,7 +64,7 @@ func Test_prepare_and_fail_command(t *testing.T) {
 
 func Test_prepare_and_fail_args(t *testing.T) {
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "tail",
 		Args:    []string{"${xxx}", "config.go"},
 		WorkDir: ".",
@@ -76,7 +78,7 @@ func Test_prepare_and_fail_args(t *testing.T) {
 
 func Test_prepare_and_fail_envs(t *testing.T) {
 	e := &execStruct{
-		log:     &mockLogger{},
+		log:     &log.MockLogger{},
 		Command: "tail",
 		Args:    []string{"-f", "config.go"},
 		WorkDir: ".",
