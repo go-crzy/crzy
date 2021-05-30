@@ -60,35 +60,36 @@ func (c *DefaultRunner) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 	store, err := run.createStore()
 	if err != nil {
-		return err
-	}
-	state := run.newStateManager()
-	gitCommand, err := run.newDefaultGitCommand(*store)
-	if err != nil {
-		log.Error(err, "msg", "could not get GIT")
+		log.Error(err, "msg", "could not create store")
 		return err
 	}
 	defer store.delete()
+	state := run.newStateManager()
+	gitCommand, err := run.newDefaultGitCommand(*store)
+	if err != nil {
+		log.Error(err, "msg", "could not get git")
+		return err
+	}
 	trigger := make(chan event)
 	defer close(trigger)
 	release := make(chan event)
 	defer close(release)
 	gitServer, err := run.newGitServer(*store, state, trigger, release)
 	if err != nil {
-		log.Error(err, "msg", "could not initialize GIT server")
+		log.Error(err, "msg", "could not initialize git")
 		return err
 	}
-	listener1, err := run.newHTTPListener(":8080")
+	listener1, err := run.newHTTPListener(fmt.Sprintf(":%d", run.Config.Main.ApiPort))
 	if err != nil {
-		log.Error(err, "msg", "could not start the GIT listener")
+		log.Error(err, "msg", "could not start git listener")
 		return err
 	}
 	upstream := newUpstream(state.state)
 	f := func(port string) { upstream.setDefault(port) }
 	proxy := newReverseProxy(upstream)
-	listener2, err := run.newHTTPListener(":8081")
+	listener2, err := run.newHTTPListener(fmt.Sprintf(":%d", run.Config.Main.ProxyPort))
 	if err != nil {
-		log.Error(err, "msg", "could not start the GIT listener")
+		log.Error(err, "msg", "could not start proxy listener")
 		return err
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -98,6 +99,7 @@ func (c *DefaultRunner) Run(ctx context.Context) error {
 	group.Go(func() error { return run.createAndStartWorkflows(ctx, state, gitCommand, trigger, release, f) })
 	if err := group.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Error(err, "compute have stopped with error")
+		return err
 	}
 	return nil
 }
