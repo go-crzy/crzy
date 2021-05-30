@@ -22,7 +22,6 @@ type triggerWorkflow struct {
 
 func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy chan<- event) error {
 	log := w.log.WithName("trigger")
-	firstsync := true
 	deploying := false
 	triggered := false
 	command := w.command
@@ -38,16 +37,9 @@ func (w *triggerWorkflow) start(ctx context.Context, action <-chan event, deploy
 					triggered = false
 					err := w.git.syncWorkspace(w.head)
 					if err != nil {
-						switch firstsync {
-						case true:
-							firstsync = false
-							log.Info("cannot sync on first capture. do not deploy...")
-						default:
-							log.Error(err, "error during sync of the repository")
-						}
+						log.Error(err, "error during sync of the repository")
 						continue
 					}
-					firstsync = false
 					version, err := command.version()
 					if err != nil {
 						log.Error(err, "error during version of the repository")

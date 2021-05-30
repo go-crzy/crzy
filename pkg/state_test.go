@@ -129,3 +129,36 @@ func Test_listVersionsDetails_fail(t *testing.T) {
 		t.Error("should fail with errNoVersion; error:", err)
 	}
 }
+
+func Test_logVersion_success(t *testing.T) {
+	r := defaultState{
+		state: map[string]syntheticWorkflow{
+			"abc": {
+				Version: "abc",
+				Runners: map[string]runner{
+					"release": {
+						Steps: []step{
+							{
+								execStruct: execStruct{
+									log:   &log.MockLogger{},
+									files: []*file{},
+								},
+								Name: "install",
+							},
+						},
+						Name:   "release",
+						Status: "success",
+					},
+				},
+			},
+		},
+	}
+	_, err := r.logVersion("abc", "log")
+	if err != errNoLogfile {
+		t.Error("should fail with errNoVersion; error:", err)
+	}
+	_, err = r.logVersion("abc", "err")
+	if err != errNoLogfile {
+		t.Error("should fail with errNoVersion; error:", err)
+	}
+}
