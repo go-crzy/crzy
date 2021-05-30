@@ -3,6 +3,7 @@ package pkg
 import (
 	"embed"
 	"errors"
+	"flag"
 	"io/ioutil"
 	"runtime"
 	"sync"
@@ -101,4 +102,46 @@ func defaultConf(lang string) (conf *config, err error) {
 	default:
 		return nil, errUnsupportedLang
 	}
+}
+
+type parser interface {
+	parse() args
+}
+
+type argsParser struct{}
+
+type args struct {
+	configFile string
+	repository string
+	head       string
+	colorize   bool
+	version    bool
+}
+
+func (p *argsParser) parse() args {
+	a := args{}
+	flag.StringVar(&a.configFile, "config", defaultConfigFile, "configuration file")
+	flag.StringVar(&a.repository, "repository", "myrepo", "GIT repository target name")
+	flag.StringVar(&a.head, "head", "main", "GIT repository target name")
+	flag.BoolVar(&a.colorize, "color", false, "colorize logs")
+	flag.BoolVar(&a.version, "version", false, "display the version")
+	flag.Parse()
+	return a
+}
+
+func getConf(a args) (*config, error) {
+	conf, err := getConfig(defaultLanguage, a.configFile)
+	if err != nil {
+		return nil, err
+	}
+	if a.repository != "myrepo" || conf.Main.Repository == "" {
+		conf.Main.Repository = a.repository
+	}
+	if a.head != "main" || conf.Main.Head == "" {
+		conf.Main.Head = a.head
+	}
+	if a.colorize {
+		conf.Main.Color = a.colorize
+	}
+	return conf, nil
 }

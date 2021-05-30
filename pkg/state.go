@@ -92,16 +92,16 @@ func (a *stateDefaultClient) notifyStep(version, workflow, status string, step s
 func (a *stateMockClient) notifyStep(version, workflow, status string, step step) {
 }
 
-func (r *runContainer) newStateManager() *stateManager {
+func (r *defaultContainer) newStateManager() *stateManager {
 	return &stateManager{
 		notifier: make(chan stepEvent),
 		state: &defaultState{
 			configuration: &configuration{
-				Head: r.Config.Main.Head,
+				Head: r.config.Main.Head,
 			},
 			state: map[string]syntheticWorkflow{},
 		},
-		log: r.Log.WithName("state"),
+		log: r.log.WithName("state"),
 	}
 }
 

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"errors"
 	"path"
 	"runtime"
 	"testing"
@@ -10,6 +11,20 @@ import (
 	log "github.com/go-crzy/crzy/logr"
 	"golang.org/x/sync/errgroup"
 )
+
+type mockTriggerCommand struct {
+	output bool
+}
+
+func (w *mockTriggerCommand) version() (string, error) {
+	if w.output {
+		return "1", nil
+	}
+	return "1", errors.New("error")
+}
+
+func (d *mockTriggerCommand) setTriggerWorkflow(w *triggerWorkflow) {
+}
 
 func Test_triggerWorkflow_and_succeed(t *testing.T) {
 	trigger := &triggerWorkflow{

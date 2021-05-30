@@ -8,8 +8,8 @@ import (
 
 // Test_StoreCreateAndDelete
 func Test_storeCreateAndDelete(t *testing.T) {
-	run := runContainer{
-		Log: &log.MockLogger{},
+	run := defaultContainer{
+		log: &log.MockLogger{},
 	}
 	store, err := run.createStore()
 	if err != nil {

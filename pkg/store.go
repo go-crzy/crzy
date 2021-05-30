@@ -15,8 +15,8 @@ type store struct {
 	log     logr.Logger
 }
 
-func (r *runContainer) createStore() (*store, error) {
-	log := r.Log.WithName("store")
+func (r *defaultContainer) createStore() (*store, error) {
+	log := r.log.WithName("store")
 	rootDir, err := os.MkdirTemp("", "crzy")
 	if err != nil {
 		return nil, err

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -16,14 +17,30 @@ type HTTPListener struct {
 	lsnr net.Listener
 }
 
-func (r *runContainer) newHTTPListener(addr string) (*HTTPListener, error) {
+const (
+	listenerProxyAddr = "proxy"
+	listenerAPIAddr   = "api"
+)
+
+var errUnknownListener = errors.New("listener unknown")
+
+func (r *defaultContainer) newHTTPListener(key string) (*HTTPListener, error) {
+	addr := ""
+	switch key {
+	case listenerProxyAddr:
+		addr = ":8081"
+	case listenerAPIAddr:
+		addr = ":8080"
+	default:
+		return nil, errUnknownListener
+	}
 	lsnr, err := net.Listen("tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 	return &HTTPListener{
 		errc: make(chan error),
-		log:  r.Log.WithName("http"),
+		log:  r.log.WithName("http"),
 		lsnr: lsnr,
 	}, nil
 }
