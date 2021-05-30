@@ -39,8 +39,13 @@ func (s *mockState) getConfiguration() []byte {
 }
 
 func Test_newStateManager(t *testing.T) {
-	r := &runContainer{
-		Log: &log.MockLogger{},
+	r := &defaultContainer{
+		config: &config{
+			Main: mainStruct{
+				Head: "main",
+			},
+		},
+		log: &log.MockLogger{},
 	}
 	v := r.newStateManager()
 	stateClient := &stateDefaultClient{

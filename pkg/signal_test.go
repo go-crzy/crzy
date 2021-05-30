@@ -10,8 +10,8 @@ import (
 )
 
 func Test_newSignalWithInterrupt(t *testing.T) {
-	run := &runContainer{
-		Log: &log.MockLogger{},
+	run := &defaultContainer{
+		log: &log.MockLogger{},
 	}
 	signal := run.newSignalHandler()
 	g, ctx := errgroup.WithContext(context.TODO())
@@ -24,8 +24,8 @@ func Test_newSignalWithInterrupt(t *testing.T) {
 }
 
 func Test_newSignalWithCancel(t *testing.T) {
-	run := &runContainer{
-		Log: &log.MockLogger{},
+	run := &defaultContainer{
+		log: &log.MockLogger{},
 	}
 	signal := run.newSignalHandler()
 	g, ctx := errgroup.WithContext(context.TODO())

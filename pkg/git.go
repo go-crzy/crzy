@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"errors"
 	"net/http"
 	"os"
 	"os/exec"
@@ -28,13 +27,13 @@ type defaultGitCommand struct {
 	log   logr.Logger
 }
 
-func (r *runContainer) newDefaultGitCommand(store store) (gitCommand, error) {
+func (r *defaultContainer) newDefaultGitCommand(store store) (gitCommand, error) {
 	bin, err := exec.LookPath("git")
 	if err != nil {
-		r.Log.Info("git not found...")
+		r.log.Info("git not found...")
 		return nil, err
 	}
-	return &defaultGitCommand{bin: bin, store: store, log: r.Log}, nil
+	return &defaultGitCommand{bin: bin, store: store, log: r.log}, nil
 }
 
 func (git *defaultGitCommand) initRepository() error {
@@ -95,68 +94,6 @@ func (git *defaultGitCommand) getExecdir() string {
 	return git.store.execDir
 }
 
-type mockGitSuccessCommand struct {
-}
-
-func (git *mockGitSuccessCommand) initRepository() error {
-	return nil
-}
-
-func (git *mockGitSuccessCommand) cloneRepository() error {
-	return nil
-}
-
-func (git *mockGitSuccessCommand) getBin() string {
-	return "git"
-}
-
-func (git *mockGitSuccessCommand) getRepository() string {
-	return "/repository"
-}
-
-func (git *mockGitSuccessCommand) getWorkspace() string {
-	return "/workspace"
-}
-
-func (git *mockGitSuccessCommand) getExecdir() string {
-	return "/executions"
-}
-
-func (git *mockGitSuccessCommand) syncWorkspace(head string) error {
-	return nil
-}
-
-type mockGitFailCommand struct {
-}
-
-func (git *mockGitFailCommand) initRepository() error {
-	return errors.New("error")
-}
-
-func (git *mockGitFailCommand) cloneRepository() error {
-	return errors.New("error")
-}
-
-func (git *mockGitFailCommand) getBin() string {
-	return "git"
-}
-
-func (git *mockGitFailCommand) getRepository() string {
-	return "/repository"
-}
-
-func (git *mockGitFailCommand) getWorkspace() string {
-	return "/workspace"
-}
-
-func (git *mockGitFailCommand) getExecdir() string {
-	return "/executions"
-}
-
-func (git *mockGitFailCommand) syncWorkspace(head string) error {
-	return errors.New("error")
-}
-
 type gitServer struct {
 	repoName   string
 	head       string
@@ -168,21 +105,21 @@ type gitServer struct {
 	state      *stateManager
 }
 
-func (r *runContainer) newGitServer(store store, state *stateManager, action chan<- event, release chan<- event) (*gitServer, error) {
-	log := r.Log.WithName("git")
+func (r *defaultContainer) newGitServer(store store, state *stateManager, action chan<- event, release chan<- event) (*gitServer, error) {
+	log := r.log.WithName("git")
 	command, err := r.newDefaultGitCommand(store)
 	if err != nil {
-		r.Log.Error(err, "unable to find git")
+		r.log.Error(err, "unable to find git")
 		return nil, err
 	}
 	err = os.Chdir(command.getRepository())
 	if err != nil {
-		r.Log.Error(err, "unable to change directory", "data", command.getRepository())
+		r.log.Error(err, "unable to change directory", "data", command.getRepository())
 		return nil, err
 	}
 	ghx, err := githttpxfer.New(command.getRepository(), command.getBin())
 	if err != nil {
-		r.Log.Error(err, "unable to create git server instance")
+		r.log.Error(err, "unable to create git server instance")
 		return nil, err
 	}
 	// prepare run service rpc upload.
@@ -195,15 +132,15 @@ func (r *runContainer) newGitServer(store store, state *stateManager, action cha
 		return nil, err
 	}
 	server := &gitServer{
-		repoName:   r.Config.Main.Repository,
-		head:       r.Config.Main.Head,
+		repoName:   r.config.Main.Repository,
+		head:       r.config.Main.Head,
 		gitCommand: command,
 		action:     action,
 		release:    release,
 		log:        log,
 		state:      state,
 	}
-	handler := loggingMiddleware(r.Log.WithName("git"), server.captureAndTrigger(ghx))
+	handler := loggingMiddleware(r.log.WithName("git"), server.captureAndTrigger(ghx))
 	server.ghx = &handler
 	return server, nil
 }

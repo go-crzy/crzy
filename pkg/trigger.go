@@ -123,17 +123,3 @@ func (d *defaultTriggerCommand) version() (string, error) {
 	result := strings.Split(string(output), "\n")[0]
 	return result, nil
 }
-
-type mockTriggerCommand struct {
-	output bool
-}
-
-func (w *mockTriggerCommand) version() (string, error) {
-	if w.output {
-		return "1", nil
-	}
-	return "1", errors.New("error")
-}
-
-func (d *mockTriggerCommand) setTriggerWorkflow(w *triggerWorkflow) {
-}

@@ -13,10 +13,10 @@ import (
 )
 
 func Test_newHTTPListener_and_success(t *testing.T) {
-	r := &runContainer{
-		Log: &log.MockLogger{},
+	r := &defaultContainer{
+		log: &log.MockLogger{},
 	}
-	v, err := r.newHTTPListener(":8999")
+	v, err := r.newHTTPListener(listenerAPIAddr)
 	if err != nil {
 		t.Error("should succeed", err)
 	}
@@ -33,8 +33,8 @@ func Test_newHTTPListener_and_success(t *testing.T) {
 }
 
 func Test_newHTTPListener_and_fail(t *testing.T) {
-	r := &runContainer{
-		Log: &log.MockLogger{},
+	r := &defaultContainer{
+		log: &log.MockLogger{},
 	}
 	_, err := r.newHTTPListener("abc")
 	if err == nil {

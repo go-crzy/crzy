@@ -8,6 +8,21 @@ import (
 	"testing"
 )
 
+type mockUpstream struct{}
+
+// setDefault an upstream server for a service version
+func (u *mockUpstream) setDefault(name string) {
+}
+
+// GetDefault an upstream server for a service version
+func (u *mockUpstream) getDefault() (string, error) {
+	return "", errServiceNotFound
+}
+
+func (u *mockUpstream) listVersions() []byte {
+	return []byte(`{"versions": ["123"]}`)
+}
+
 func Test_newReverseProxy_with_404(t *testing.T) {
 	h := newReverseProxy(&mockUpstream{})
 	server := httptest.NewServer(h)

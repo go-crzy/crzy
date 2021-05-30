@@ -15,10 +15,10 @@ type signalHandler struct {
 	log     logr.Logger
 }
 
-func (r *runContainer) newSignalHandler() *signalHandler {
+func (r *defaultContainer) newSignalHandler() *signalHandler {
 	return &signalHandler{
 		signalc: make(chan os.Signal, 1),
-		log:     r.Log.WithName("signal"),
+		log:     r.log.WithName("signal"),
 	}
 }
 

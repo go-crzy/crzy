@@ -25,7 +25,7 @@ type event struct {
 	envs envVars
 }
 
-func (r *runContainer) createAndStartWorkflows(
+func (r *defaultContainer) createAndStartWorkflows(
 	ctx context.Context,
 	state *stateManager,
 	git gitCommand,
@@ -34,24 +34,24 @@ func (r *runContainer) createAndStartWorkflows(
 	switchUpstream func(string)) error {
 	err := git.cloneRepository()
 	if err != nil {
-		r.Log.Error(err, "error cloning repository")
+		r.log.Error(err, "error cloning repository")
 		return err
 	}
 	g, ctx := errgroup.WithContext(ctx)
 	ctx, cancel := context.WithCancel(ctx)
-	install := r.Config.Deploy.Install
+	install := r.config.Deploy.Install
 	install.name = "install"
-	test := r.Config.Deploy.Test
+	test := r.config.Deploy.Test
 	test.name = "test"
-	preBuild := r.Config.Deploy.PreBuild
+	preBuild := r.config.Deploy.PreBuild
 	preBuild.name = "prebuild"
-	build := r.Config.Deploy.Build
+	build := r.config.Deploy.Build
 	build.name = "build"
 	deploy := &deployWorkflow{
-		deployStruct: r.Config.Deploy,
+		deployStruct: r.config.Deploy,
 		workspace:    git.getWorkspace(),
 		execdir:      git.getExecdir(),
-		log:          r.Log,
+		log:          r.log,
 		keys: map[string]execStruct{
 			"install":   install,
 			"test":      test,
@@ -62,18 +62,18 @@ func (r *runContainer) createAndStartWorkflows(
 		state: &stateDefaultClient{notifier: state.notifier},
 	}
 	trigger := &triggerWorkflow{
-		triggerStruct: r.Config.Trigger,
-		head:          r.Config.Main.Head,
-		log:           r.Log,
+		triggerStruct: r.config.Trigger,
+		head:          r.config.Main.Head,
+		log:           r.log,
 		git:           git,
 		command:       &defaultTriggerCommand{},
 		state:         &stateDefaultClient{notifier: state.notifier},
 	}
-	run := r.Config.Release.Run
+	run := r.config.Release.Run
 	run.name = "run"
 	release := &releaseWorkflow{
-		releaseStruct: r.Config.Release,
-		log:           r.Log,
+		releaseStruct: r.config.Release,
+		log:           r.log,
 		execdir:       git.getExecdir(),
 		keys: map[string]execStruct{
 			"run": run,

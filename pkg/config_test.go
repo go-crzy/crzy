@@ -8,6 +8,24 @@ import (
 	"testing"
 )
 
+type mockParser struct {
+	configFile string
+	repository string
+	head       string
+	colorize   bool
+	version    bool
+}
+
+func (p *mockParser) parse() args {
+	return args{
+		configFile: p.configFile,
+		repository: p.repository,
+		head:       p.head,
+		colorize:   p.colorize,
+		version:    p.version,
+	}
+}
+
 func Test_defaultConf_and_succeed(t *testing.T) {
 	d := &config{
 		Main: mainStruct{
@@ -76,7 +94,16 @@ func Test_getConfig_and_fail_java(t *testing.T) {
 func Test_getConfig_and_fail_golang(t *testing.T) {
 	_, err := getConfig("golang", "fail.yaml")
 	if err != errLoadingConfigFile {
-		t.Error("loading the file should return an error")
+		t.Error("should fail reading file, instead:", err)
+	}
+}
+
+func Test_getConf_and_fail_golang(t *testing.T) {
+	_, err := getConf(args{
+		configFile: "fail.yaml",
+	})
+	if err != errLoadingConfigFile {
+		t.Error("should fail reading file, instead:", err)
 	}
 }
 
@@ -101,6 +128,17 @@ func Test_getConfig_with_file_and_succeed(t *testing.T) {
 	defer f.Close()
 	f.ReadFrom(input)
 	_, err = getConfig("golang", f.Name())
+	if err != nil {
+		t.Error("should be able to read file")
+	}
+}
+
+func Test_getConf_with_file_and_succeed(t *testing.T) {
+	args := args{
+		configFile: defaultConfigFile,
+		colorize:   true,
+	}
+	_, err := getConf(args)
 	if err != nil {
 		t.Error("should be able to read file")
 	}

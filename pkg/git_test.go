@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,68 @@ import (
 	log "github.com/go-crzy/crzy/logr"
 )
 
+type mockGitSuccessCommand struct {
+}
+
+func (git *mockGitSuccessCommand) initRepository() error {
+	return nil
+}
+
+func (git *mockGitSuccessCommand) cloneRepository() error {
+	return nil
+}
+
+func (git *mockGitSuccessCommand) getBin() string {
+	return "git"
+}
+
+func (git *mockGitSuccessCommand) getRepository() string {
+	return "/repository"
+}
+
+func (git *mockGitSuccessCommand) getWorkspace() string {
+	return "/workspace"
+}
+
+func (git *mockGitSuccessCommand) getExecdir() string {
+	return "/executions"
+}
+
+func (git *mockGitSuccessCommand) syncWorkspace(head string) error {
+	return nil
+}
+
+type mockGitFailCommand struct {
+}
+
+func (git *mockGitFailCommand) initRepository() error {
+	return errors.New("error")
+}
+
+func (git *mockGitFailCommand) cloneRepository() error {
+	return errors.New("error")
+}
+
+func (git *mockGitFailCommand) getBin() string {
+	return "git"
+}
+
+func (git *mockGitFailCommand) getRepository() string {
+	return "/repository"
+}
+
+func (git *mockGitFailCommand) getWorkspace() string {
+	return "/workspace"
+}
+
+func (git *mockGitFailCommand) getExecdir() string {
+	return "/executions"
+}
+
+func (git *mockGitFailCommand) syncWorkspace(head string) error {
+	return errors.New("error")
+}
+
 func Test_newDefaultGitCommand(t *testing.T) {
 	store := store{
 		rootDir: "/root",
@@ -20,9 +83,9 @@ func Test_newDefaultGitCommand(t *testing.T) {
 		workdir: "/root/workspace",
 		log:     &log.MockLogger{},
 	}
-	r := &runContainer{
-		Log:    &log.MockLogger{},
-		Config: config{},
+	r := &defaultContainer{
+		log:    &log.MockLogger{},
+		config: &config{},
 	}
 	g, err := r.newDefaultGitCommand(store)
 	if err != nil {
@@ -67,9 +130,9 @@ func Test_newGitServer(t *testing.T) {
 		workdir: path.Join(tmpdir, "workspace"),
 		log:     &log.MockLogger{},
 	}
-	r := &runContainer{
-		Log:    &log.MockLogger{},
-		Config: config{},
+	r := &defaultContainer{
+		log:    &log.MockLogger{},
+		config: &config{},
 	}
 	action := make(chan event)
 	release := make(chan event)

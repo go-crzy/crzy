@@ -22,9 +22,9 @@ func Test_workflowsAndCancel(t *testing.T) {
 			},
 		},
 	}
-	r := runContainer{
-		Log:    &log.MockLogger{},
-		Config: conf,
+	r := defaultContainer{
+		log:    &log.MockLogger{},
+		config: &conf,
 	}
 	g := new(errgroup.Group)
 	ctx, cancel := context.WithCancel(context.TODO())
@@ -64,9 +64,9 @@ func Test_workflowsAndFail(t *testing.T) {
 			},
 		},
 	}
-	r := runContainer{
-		Log:    &log.MockLogger{},
-		Config: conf,
+	r := defaultContainer{
+		log:    &log.MockLogger{},
+		config: &conf,
 	}
 	startTrigger := make(chan event)
 	defer close(startTrigger)

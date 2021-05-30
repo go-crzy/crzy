@@ -73,18 +73,3 @@ func (u *defaultUpstream) getDefault() (string, error) {
 func (u *defaultUpstream) listVersions() []byte {
 	return u.state.listVersions()
 }
-
-type mockUpstream struct{}
-
-// setDefault an upstream server for a service version
-func (u *mockUpstream) setDefault(name string) {
-}
-
-// GetDefault an upstream server for a service version
-func (u *mockUpstream) getDefault() (string, error) {
-	return "", errServiceNotFound
-}
-
-func (u *mockUpstream) listVersions() []byte {
-	return []byte(`{"versions": ["123"]}`)
-}
