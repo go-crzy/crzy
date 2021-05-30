@@ -13,17 +13,6 @@ func Test_NewLogger_with_option(t *testing.T) {
 	}
 }
 
-func Test_Heading(t *testing.T) {
-	log := &MockLogger{}
-	heading(log)
-	if len(log.logs) != 5 {
-		t.Error("should return 5 rows")
-	}
-	if log.logs[0] != "" {
-		t.Error("I'm done")
-	}
-}
-
 func Test_defaultLogger_nocolor(t *testing.T) {
 	v := &defaultLogger{
 		name:          "main",

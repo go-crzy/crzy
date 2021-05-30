@@ -19,18 +19,13 @@ func (r *runContainer) createStore() (*store, error) {
 	log := r.Log.WithName("store")
 	rootDir, err := os.MkdirTemp("", "crzy")
 	if err != nil {
-		log.Info("unable to create temporary directory")
 		return nil, err
 	}
 	repoDir := path.Join(rootDir, "repository")
 	workDir := path.Join(rootDir, "workspace")
 	execDir := path.Join(rootDir, "execs")
 	for _, dir := range []string{repoDir, execDir, workDir} {
-		err = os.Mkdir(dir, os.ModeDir|os.ModePerm)
-		if err != nil {
-			log.Info("unable to create directory")
-			return nil, err
-		}
+		os.Mkdir(dir, os.ModeDir|os.ModePerm)
 	}
 	log.Info("directory created", "data", rootDir)
 	return &store{
@@ -42,12 +37,11 @@ func (r *runContainer) createStore() (*store, error) {
 	}, nil
 }
 
-func (s *store) delete() error {
+func (s *store) delete() {
 	err := os.RemoveAll(s.rootDir)
-	if err != nil {
-		s.log.Error(err, "error deleting store...")
-		return err
+	if err == nil {
+		s.log.Info("store deleted with success....")
+		return
 	}
-	s.log.Info("store deleted with success....")
-	return nil
+	s.log.Error(err, "error deleting store...")
 }

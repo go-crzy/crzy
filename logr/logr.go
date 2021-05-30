@@ -60,7 +60,6 @@ func NewLogger(name string, f ...(func(l *defaultLogger) *defaultLogger)) logr.L
 	for _, v := range f {
 		log = v(log)
 	}
-	heading(log)
 	return log
 }
 
@@ -201,7 +200,7 @@ func (c *defaultLogger) colorPrint(name, log string) {
 
 type MockLogger struct {
 	sync.Mutex
-	logs []string
+	Logs []string
 }
 
 func (l *MockLogger) Enabled() bool {
@@ -211,13 +210,13 @@ func (l *MockLogger) Enabled() bool {
 func (l *MockLogger) Info(msg string, keysAndValues ...interface{}) {
 	l.Lock()
 	defer l.Unlock()
-	l.logs = append(l.logs, msg)
+	l.Logs = append(l.Logs, msg)
 }
 
 func (l *MockLogger) Error(err error, msg string, keysAndValues ...interface{}) {
 	l.Lock()
 	defer l.Unlock()
-	l.logs = append(l.logs, msg)
+	l.Logs = append(l.Logs, msg)
 }
 
 func (l *MockLogger) V(level int) logr.Logger { return &MockLogger{} }
@@ -225,11 +224,3 @@ func (l *MockLogger) V(level int) logr.Logger { return &MockLogger{} }
 func (c *MockLogger) WithValues(keysAndValues ...interface{}) logr.Logger { return &MockLogger{} }
 
 func (c *MockLogger) WithName(name string) logr.Logger { return &MockLogger{} }
-
-func heading(log logr.Logger) {
-	log.Info("")
-	log.Info(" █▀▀ █▀▀█ ▀▀█ █░░█")
-	log.Info(" █░░ █▄▄▀ ▄▀░ █▄▄█")
-	log.Info(" ▀▀▀ ▀░▀▀ ▀▀▀ ▄▄▄█")
-	log.Info("")
-}
