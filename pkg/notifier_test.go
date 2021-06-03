@@ -48,7 +48,6 @@ type notifierTest struct {
 }
 
 func Test_notifier(t *testing.T) {
-	// token := os.Getenv("SLACK_TOKEN")
 	fileContent := `
 notifier:
   slack:
