@@ -15,7 +15,23 @@ type slackStruct struct {
 	Channel string
 }
 
-func getChannel(token, channel string) string {
+type slackNotifier struct {
+	messenger messenger
+}
+
+type messenger interface {
+	GetConversations(params *slack.GetConversationsParameters) (channels []slack.Channel, nextCursor string, err error)
+	PostMessage(channelID string, options ...slack.MsgOption) (string, string, error)
+}
+
+func newSlackNotifier(token string) slackNotifier {
+	api := slack.New(token)
+	return slackNotifier{
+		messenger: api,
+	}
+}
+
+func (n *slackNotifier) getChannel(token, channel string) string {
 	api := slack.New(token)
 	channels, _, err := api.GetConversations(
 		&slack.GetConversationsParameters{
@@ -33,9 +49,8 @@ func getChannel(token, channel string) string {
 	return ""
 }
 
-func sendMessage(token, channelID, msg string) {
-	api := slack.New(token)
-	channelID, timestamp, err := api.PostMessage(
+func (n *slackNotifier) sendMessage(token, channelID, msg string) {
+	channelID, timestamp, err := n.messenger.PostMessage(
 		channelID,
 		slack.MsgOptionText(msg, false),
 	)
