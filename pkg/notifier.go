@@ -31,9 +31,8 @@ func newSlackNotifier(token string) slackNotifier {
 	}
 }
 
-func (n *slackNotifier) getChannel(token, channel string) string {
-	api := slack.New(token)
-	channels, _, err := api.GetConversations(
+func (n *slackNotifier) getChannel(channel string) string {
+	channels, _, err := n.messenger.GetConversations(
 		&slack.GetConversationsParameters{
 			Types: []string{"public_channel"},
 		})
@@ -49,14 +48,15 @@ func (n *slackNotifier) getChannel(token, channel string) string {
 	return ""
 }
 
-func (n *slackNotifier) sendMessage(token, channelID, msg string) {
+func (n *slackNotifier) sendMessage(token, channelID, msg string) error {
 	channelID, timestamp, err := n.messenger.PostMessage(
 		channelID,
 		slack.MsgOptionText(msg, false),
 	)
 	if err != nil {
 		fmt.Printf("%s\n", err)
-		return
+		return err
 	}
 	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+	return nil
 }
