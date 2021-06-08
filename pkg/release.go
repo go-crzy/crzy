@@ -19,6 +19,28 @@ type releaseWorkflow struct {
 	state          stateClient
 }
 
+func deepCopy(e execStruct) execStruct {
+	output := execStruct{
+		log:     e.log,
+		name:    e.name,
+		Command: e.Command,
+		Args:    []string{},
+		WorkDir: e.WorkDir,
+		Envs:    envVars{},
+		Output:  e.Output,
+		files:   e.files,
+	}
+	output.Args = append(output.Args, e.Args...)
+	for _, v := range e.Envs {
+		env := envVar{
+			Name:  v.Name,
+			Value: v.Value,
+		}
+		output.Envs = append(output.Envs, env)
+	}
+	return output
+}
+
 func (w *releaseWorkflow) start(ctx context.Context, action <-chan event) error {
 	log := w.log.WithName("release")
 	port, err := createPortSequence(w.PortRange.Min, w.PortRange.Max)
@@ -38,7 +60,7 @@ func (w *releaseWorkflow) start(ctx context.Context, action <-chan event) error 
 					log.Error(err, "could not reserve port")
 					continue
 				}
-				cmd := w.keys[w.flow]
+				cmd := deepCopy(w.keys[w.flow])
 				cmd.log = log
 				if cmd.Command == "" {
 					continue
