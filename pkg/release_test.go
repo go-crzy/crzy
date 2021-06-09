@@ -31,6 +31,7 @@ func Test_releaseWorkflow(t *testing.T) {
 		switchUpstream: func(string) {},
 		processes:      map[string]*os.Process{},
 		files:          make(map[string][]*file),
+		slack:          &slackNotifier{messenger: &mockMessenger{}},
 	}
 	if runtime.GOOS == "windows" {
 		release.Run.Command = "powershell"
