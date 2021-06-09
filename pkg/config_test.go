@@ -63,7 +63,14 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 				Min: 8090,
 				Max: 8100,
 			},
-		}}
+		},
+		Notifier: notifierStruct{
+			Slack: slackStruct{
+				Channel: "general",
+				Token:   "${SLACK_TOKEN}",
+			},
+		},
+	}
 	if runtime.GOOS == "windows" {
 		d.Deploy.Artifact.Extension = ".exe"
 	}

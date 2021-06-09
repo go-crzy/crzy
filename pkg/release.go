@@ -17,6 +17,7 @@ type releaseWorkflow struct {
 	processes      map[string]*os.Process
 	switchUpstream func(string)
 	state          stateClient
+	slack          *slackNotifier
 }
 
 func deepCopy(e execStruct) execStruct {

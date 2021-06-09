@@ -37,3 +37,8 @@ release:
       value: "localhost:${port}"
     - name: PORT
       value: ":${port}"
+
+notifier:
+  slack:
+    channel: general
+    token: ${SLACK_TOKEN}
