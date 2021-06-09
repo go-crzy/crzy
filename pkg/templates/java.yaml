@@ -41,3 +41,8 @@ release:
     envs:
     - name: PORT
       value: "${port}"
+
+notifier:
+  slack:
+    channel: general
+    token: ${SLACK_TOKEN}

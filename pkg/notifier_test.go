@@ -1,31 +1,15 @@
 package pkg
 
 import (
-	"errors"
+	"os"
 	"testing"
 
-	"github.com/slack-go/slack"
 	"gopkg.in/yaml.v3"
 )
 
-type mockMessenger struct{}
-
-func (m *mockMessenger) GetConversations(params *slack.GetConversationsParameters) ([]slack.Channel, string, error) {
-	channels := []slack.Channel{}
-	channels = append(channels, slack.Channel{GroupConversation: slack.GroupConversation{Conversation: slack.Conversation{ID: "123"}, Name: "ops"}})
-	return channels, "", nil
-}
-
-func (m *mockMessenger) PostMessage(channelID string, options ...slack.MsgOption) (string, string, error) {
-	if channelID == "wrong" {
-		return "", "", errors.New("wrongChannel")
-	}
-	return "", "", nil
-}
-
 func Test_getChannel(t *testing.T) {
 	g := &slackNotifier{messenger: &mockMessenger{}}
-	channel := g.getChannel("ops")
+	channel := getChannel(g, "ops")
 	if channel != "123" {
 		t.Error("Should succeed", channel)
 	}
@@ -33,11 +17,12 @@ func Test_getChannel(t *testing.T) {
 
 func Test_sendMessage(t *testing.T) {
 	s := &slackNotifier{messenger: &mockMessenger{}}
-	err := s.sendMessage("", "", "titi")
+	err := s.sendMessage("titi")
 	if err != nil {
 		t.Error("Should succeed", err)
 	}
-	err = s.sendMessage("", "wrong", "titi")
+	s.channelID = "wrong"
+	err = s.sendMessage("titi")
 	if err.Error() != "wrongChannel" {
 		t.Error("Should fail with wrongChannel, instead:", err)
 	}
@@ -64,5 +49,29 @@ notifier:
 	}
 	if c.Notifier.Slack.Token != "xoxb-xxxx" {
 		t.Error("error channel should be xoxb-xxxx")
+	}
+}
+
+func Test_newSlackNotifier(t *testing.T) {
+	fileContent := `
+token: ${SLACK_TOKEN}
+channel: ""
+`
+	c := slackStruct{}
+	err := yaml.Unmarshal([]byte(fileContent), &c)
+	if err != nil {
+		t.Error("error unmarshalling file")
+	}
+	os.Setenv("SLACK_TOKEN", "xoxb-...")
+	newSlackNotifier(c)
+}
+
+func Test_notifier_config(t *testing.T) {
+	c, err := defaultConf("golang")
+	if err != nil {
+		t.Error("expect defaultConf with golang to succeed")
+	}
+	if c.Notifier.Slack.Token != "${SLACK_TOKEN}" {
+		t.Error("expecting ${SLACK_TOKEN}, got: ", c.Notifier.Slack.Channel)
 	}
 }

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"errors"
+	"os"
 	"regexp"
 )
 
@@ -35,9 +36,9 @@ func (evs *envVars) get(name string) string {
 	return ""
 }
 
-// replaceEnvs replaces variables identified with ${} in param with their
-// values picked from the envs map. If one value is missing, it returns the
-// ErrMissingEnv error.
+// replace replaces variables identified with ${} in param with their
+// values picked from the envs map. If one value is missing, it gets it
+// from the environment variables.
 func (evs *envVars) replace(param string) (string, error) {
 	envs, err := evs.toMap()
 	if err != nil {
@@ -48,7 +49,10 @@ func (evs *envVars) replace(param string) (string, error) {
 		key := match[0][2 : len(match[0])-1]
 		val, ok := envs[key]
 		if !ok {
-			return "", errMissingEnv
+			val = os.Getenv(key)
+			if val == "" {
+				return "", errMissingEnv
+			}
 		}
 		envPatternWithKey := regexp.MustCompile(`(\$\{` + key + `\})`)
 		param = envPatternWithKey.ReplaceAllString(param, val)

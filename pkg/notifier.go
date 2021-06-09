@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/slack-go/slack"
@@ -11,12 +12,13 @@ type notifierStruct struct {
 }
 
 type slackStruct struct {
-	Token   string `default:"${SLACK_TOKEN}"`
+	Token   string
 	Channel string
 }
 
 type slackNotifier struct {
 	messenger messenger
+	channelID string
 }
 
 type messenger interface {
@@ -24,14 +26,47 @@ type messenger interface {
 	PostMessage(channelID string, options ...slack.MsgOption) (string, string, error)
 }
 
-func newSlackNotifier(token string) slackNotifier {
-	api := slack.New(token)
-	return slackNotifier{
-		messenger: api,
-	}
+type mockMessenger struct{}
+
+func (m *mockMessenger) GetConversations(params *slack.GetConversationsParameters) ([]slack.Channel, string, error) {
+	channels := []slack.Channel{}
+	channels = append(channels, slack.Channel{GroupConversation: slack.GroupConversation{Conversation: slack.Conversation{ID: "123"}, Name: "ops"}})
+	return channels, "", nil
 }
 
-func (n *slackNotifier) getChannel(channel string) string {
+func (m *mockMessenger) PostMessage(channelID string, options ...slack.MsgOption) (string, string, error) {
+	if channelID == "wrong" {
+		return "", "", errors.New("wrongChannel")
+	}
+	return "", "", nil
+}
+
+func newSlackNotifier(s slackStruct) *slackNotifier {
+	output := &slackNotifier{
+		messenger: &mockMessenger{},
+	}
+	evs := &envVars{}
+	token, err := evs.replace(s.Token)
+	if err != nil || token == "" {
+		return output
+	}
+	channel, err := evs.replace(s.Channel)
+	if err != nil || channel == "" {
+		return output
+	}
+	api := slack.New(token)
+	notifier := &slackNotifier{
+		messenger: api,
+	}
+	channelID := getChannel(notifier, s.Channel)
+	if channelID == "" {
+		return output
+	}
+	notifier.channelID = channelID
+	return notifier
+}
+
+func getChannel(n *slackNotifier, channel string) string {
 	channels, _, err := n.messenger.GetConversations(
 		&slack.GetConversationsParameters{
 			Types: []string{"public_channel"},
@@ -48,9 +83,9 @@ func (n *slackNotifier) getChannel(channel string) string {
 	return ""
 }
 
-func (n *slackNotifier) sendMessage(token, channelID, msg string) error {
+func (n *slackNotifier) sendMessage(msg string) error {
 	channelID, timestamp, err := n.messenger.PostMessage(
-		channelID,
+		n.channelID,
 		slack.MsgOptionText(msg, false),
 	)
 	if err != nil {

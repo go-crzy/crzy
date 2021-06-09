@@ -16,6 +16,7 @@ type deployWorkflow struct {
 	keys      map[string]execStruct
 	flow      []string
 	state     stateClient
+	slack     *slackNotifier
 }
 
 func (w *deployWorkflow) start(ctx context.Context, action <-chan event, release, trigger chan<- event) error {

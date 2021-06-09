@@ -32,6 +32,7 @@ func (r *defaultContainer) createAndStartWorkflows(
 	startTrigger chan event,
 	startRelease chan event,
 	switchUpstream func(string)) error {
+	slack := newSlackNotifier(r.config.Notifier.Slack)
 	err := git.cloneRepository()
 	if err != nil {
 		r.log.Error(err, "error cloning repository")
@@ -60,6 +61,7 @@ func (r *defaultContainer) createAndStartWorkflows(
 		},
 		flow:  []string{"install", "test", "pre_build", "build"},
 		state: &stateDefaultClient{notifier: state.notifier},
+		slack: slack,
 	}
 	trigger := &triggerWorkflow{
 		triggerStruct: r.config.Trigger,
@@ -83,6 +85,7 @@ func (r *defaultContainer) createAndStartWorkflows(
 		files:          make(map[string][]*file),
 		switchUpstream: switchUpstream,
 		state:          &stateDefaultClient{notifier: state.notifier},
+		slack:          slack,
 	}
 	startDeploy := make(chan event)
 	defer close(startDeploy)
