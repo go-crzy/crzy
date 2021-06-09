@@ -84,14 +84,9 @@ func getChannel(n *slackNotifier, channel string) string {
 }
 
 func (n *slackNotifier) sendMessage(msg string) error {
-	channelID, timestamp, err := n.messenger.PostMessage(
+	_, _, err := n.messenger.PostMessage(
 		n.channelID,
 		slack.MsgOptionText(msg, false),
 	)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-		return err
-	}
-	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
-	return nil
+	return err
 }
