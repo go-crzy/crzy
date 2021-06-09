@@ -69,11 +69,10 @@ func (w *releaseWorkflow) start(ctx context.Context, action <-chan event) error 
 				err = w.switchProcesses(p, cmd, vars)
 				if err != nil {
 					log.Error(err, "execution error")
+					w.slack.sendMessage(cmd.Command + " has failed to start, error: " + err.Error())
 					continue
 				}
-				// TODO: use sendMessage()
-				// - if success : send a message on slack to say `command.Command` has started on `port`
-				// - if failure, send a message on slack to say `command.Command` could not start
+				w.slack.sendMessage(cmd.Command + " has started on " + p)
 				log.Info("release execution succeeded...")
 			}
 		case <-ctx.Done():
