@@ -53,3 +53,19 @@ func Test_releaseWorkflow(t *testing.T) {
 		t.Error("should receive a context cancel message")
 	}
 }
+
+func Test_deepCopy(t *testing.T) {
+	input := execStruct{
+		log:     &log.MockLogger{},
+		name:    "release",
+		Command: "go",
+		Args:    []string{"run", "."},
+		WorkDir: ".",
+		Envs:    envVars{envVar{Name: "ADDR", Value: "localhost:${port}"}},
+		files:   []*file{{filename: "log-1.out"}, {filename: "err-1.out"}},
+	}
+	o := deepCopy(input)
+	if len(o.Envs) == 0 || o.Envs[0].Value != "localhost:${port}" {
+		t.Error("should have one unsubtituted value")
+	}
+}
