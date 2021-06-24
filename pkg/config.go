@@ -32,6 +32,7 @@ type config struct {
 	Deploy   deployStruct
 	Release  releaseStruct
 	Notifier notifierStruct
+	Scripts  []string
 }
 
 type mainStruct struct {

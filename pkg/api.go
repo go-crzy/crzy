@@ -103,5 +103,14 @@ func newAPI(state *stateManager) http.Handler {
 	mux.Handle("/v0/versions/", &verHandler{state: state})
 	mux.Handle("/v0/actions", &actionHandler{})
 	mux.Handle("/v0/configuration", &configHandler{})
+	mux.Handle("/v0/scripts", &scriptHandler{})
 	return mux
 }
+
+type scriptHandler struct {}
+
+func (s *scriptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"scripts":["1", "2"]}`))
+	
+} 
