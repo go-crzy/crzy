@@ -64,3 +64,5 @@ func Test_configuration_success(t *testing.T) {
 		}
 	}
 }
+
+// TODO: (3) tester la route /v0/scripts
