@@ -31,6 +31,7 @@ var data = []sample{
 	{name: `post_on_action_and_succeed`, method: http.MethodPost, route: "/v0/actions", input: `{"command": "start"}`, status: http.StatusOK, output: `{"message":"started"}`},
 	{name: `post_on_action_and_fails_due_to_payload`, method: http.MethodPost, route: "/v0/actions", input: `wrong data`, status: http.StatusBadRequest, output: `{"message":"bad request"}`},
 	{name: `post_on_action_and_fails_due_to_payload`, method: http.MethodPost, route: "/v0/actions", input: `{"action": "unknown"}`, status: http.StatusBadRequest, output: `{"message":"bad request"}`},
+	{name: `get_on_scripts_and_succeeds`, method: http.MethodGet, route: "/v0/scripts", input: ``, status: http.StatusOK, output: `{"scripts":["1", "2"]}`},
 }
 
 func Test_configuration_success(t *testing.T) {
@@ -64,5 +65,3 @@ func Test_configuration_success(t *testing.T) {
 		}
 	}
 }
-
-// TODO: (3) tester la route /v0/scripts

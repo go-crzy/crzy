@@ -103,9 +103,14 @@ func newAPI(state *stateManager) http.Handler {
 	mux.Handle("/v0/versions/", &verHandler{state: state})
 	mux.Handle("/v0/actions", &actionHandler{})
 	mux.Handle("/v0/configuration", &configHandler{})
+	mux.Handle("/v0/scripts", &scriptHandler{})
 	return mux
 }
 
-// TODO: (2) Creer un http.Handler qui liste le contenu de `Scripts` et
-// renvoie un json sur /v0/scripts avec le contenu de la variable script
-// dans un premier temps renvoyer `{"scripts":["1", "2"]}`
+type scriptHandler struct {}
+
+func (s *scriptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"scripts":["1", "2"]}`))
+	
+} 

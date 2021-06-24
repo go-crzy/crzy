@@ -25,8 +25,6 @@ var (
 	errLoadingConfigFile = errors.New("loadingfile")
 )
 
-// TODO: (1) Ajouter variable Scripts de type `[]string`
-
 type config struct {
 	*sync.Mutex
 	Main     mainStruct
@@ -34,6 +32,7 @@ type config struct {
 	Deploy   deployStruct
 	Release  releaseStruct
 	Notifier notifierStruct
+	Scripts  []string
 }
 
 type mainStruct struct {
