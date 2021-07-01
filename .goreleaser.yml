@@ -1,26 +1,29 @@
 before:
   hooks:
-    - go mod tidy
-    - go generate ./...
+  - go mod tidy
+  - go generate ./...
 builds:
-  - env:
-      - CGO_ENABLED=0
-    goos:
-      - linux
-      - darwin
-      - windows
-    goarch:
-      - amd64
-      - arm64
-    ldflags:
-      - -s -w -X pkg.build={{.Version}} -X pkg.commit={{.ShortCommit}}
-    ignore:
-      - goos: windows
-        goarch: arm64
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - amd64
+  - arm64
+  ldflags:
+  - -s -w -X pkg.build={{.Version}} -X pkg.commit={{.ShortCommit}}
+  ignore:
+  - goos: windows
+    goarch: arm64
 archives:
-  - replacements:
-      386: i386
-      amd64: x86_64
+- replacements:
+    386: i386
+    amd64: x86_64
+  format_overrides:
+    - goos: windows
+      format: zip
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -28,19 +31,19 @@ snapshot:
 changelog:
   sort: asc
 brews:
-  - name: crzy
-    tap:
-      owner: go-crzy
-      name: homebrew-crzy
-    commit_author:
-      name: Gregory
-      email: 10611760+gregoryguillou@users.noreply.github.com
-    folder: Formula
-    homepage: "https://github.com/go-crzy/crzy"
-    description: "deploy your tests in less than 3 seconds."
-    license: "Apache-2.0"
-    dependencies:
-      - name: git
-      - name: go
-    install: |
-      bin.install "crzy"
+- name: crzy
+  tap:
+    owner: go-crzy
+    name: homebrew-crzy
+  commit_author:
+    name: Gregory
+    email: 10611760+gregoryguillou@users.noreply.github.com
+  folder: Formula
+  homepage: "https://github.com/go-crzy/crzy"
+  description: "deploy your tests in less than 3 seconds."
+  license: "Apache-2.0"
+  dependencies:
+  - name: git
+  - name: go
+  install: |
+    bin.install "crzy"
