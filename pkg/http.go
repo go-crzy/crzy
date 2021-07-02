@@ -2,10 +2,12 @@ package pkg
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -75,4 +77,44 @@ func loggingMiddleware(log logr.Logger, next http.Handler) http.Handler {
 		t2 := time.Now()
 		log.Info(fmt.Sprintf("[%s] %q %v", r.Method, r.URL.String(), t2.Sub(t1)))
 	})
+}
+
+type expl struct {
+	next               http.Handler
+	username, password string
+}
+
+func (ex *expl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if ex.password == "" || ex.username == "" {
+		ex.next.ServeHTTP(w, r)
+		return
+	}
+	authorization := r.Header.Get("authorization")
+	keys := strings.Split(authorization, " ")
+	if len(keys) != 2 || keys[0] != "Basic" {
+		w.Header().Add("WWW-Authenticate", "Basic realm=\"require auth\"")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	body, err := base64.StdEncoding.DecodeString(keys[1])
+	if err != nil {
+		w.Header().Add("WWW-Authenticate", "Basic realm=\"require auth\"")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	keys = strings.Split(string(body), ":")
+	if len(keys) != 2 || keys[0] != ex.username || keys[1] != ex.password {
+		w.Header().Add("WWW-Authenticate", "Basic realm=\"require auth\"")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	ex.next.ServeHTTP(w, r)
+}
+
+func (c *config) authMiddleware(h http.Handler) http.Handler {
+	return &expl{
+		next:     h,
+		username: c.API.Username,
+		password: c.API.Password,
+	}
 }

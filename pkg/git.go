@@ -141,6 +141,7 @@ func (r *defaultContainer) newGitServer(store store, state *stateManager, action
 		state:      state,
 	}
 	handler := loggingMiddleware(r.log.WithName("git"), server.captureAndTrigger(ghx))
+	handler = r.config.authMiddleware(handler)
 	server.ghx = &handler
 	return server, nil
 }

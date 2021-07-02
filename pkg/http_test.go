@@ -130,3 +130,43 @@ func Test_run_and_error(t *testing.T) {
 		t.Error(err, "should return error")
 	}
 }
+
+func Test_AuthdHandler_forbidden(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest("Get", "/", nil)
+	request.Header.Add("authorization", "Basic aaa")
+
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {rw.Write([]byte("hello"))})
+	conf := &config{API: apiStruct{Username: "emilie", Password: "emilie"}}
+	next := conf.authMiddleware(handler)
+
+	next.ServeHTTP(recorder, request)
+
+	result := recorder.Result()
+	if result.StatusCode != http.StatusUnauthorized {
+		t.Errorf(
+			"Status Code should be 401, current: %d",
+			result.StatusCode,
+		)
+	}
+}
+
+func Test_AuthdHandler_authorized(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest("Get", "/", nil)
+	request.Header.Add("authorization", "Basic ZW1pbGllOmVtaWxpZQ==")
+
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {rw.Write([]byte("hello"))})
+	conf := &config{API: apiStruct{Username: "emilie", Password: "emilie"}}
+	next := conf.authMiddleware(handler)
+
+	next.ServeHTTP(recorder, request)
+
+	result := recorder.Result()
+	if result.StatusCode != http.StatusOK {
+		t.Errorf(
+			"Status Code should be 200, current: %d",
+			result.StatusCode,
+		)
+	}
+}

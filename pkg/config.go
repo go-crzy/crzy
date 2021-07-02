@@ -33,6 +33,8 @@ type config struct {
 	Release  releaseStruct
 	Notifier notifierStruct
 	Scripts  []string
+	API      apiStruct `yaml:"api"`
+	Proxy    proxyStruct
 }
 
 type mainStruct struct {
@@ -76,6 +78,14 @@ type portRangeStruct struct {
 type releaseStruct struct {
 	PortRange portRangeStruct `yaml:"port_range"`
 	Run       execStruct
+}
+
+type apiStruct struct {
+	Username, Password string
+}
+
+type proxyStruct struct {
+	Origins []string
 }
 
 func getConfig(lang string, configFile string) (*config, error) {
