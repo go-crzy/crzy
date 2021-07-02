@@ -25,10 +25,6 @@ var (
 	errLoadingConfigFile = errors.New("loadingfile")
 )
 
-// Etape 1: ajouter 2 champs
-// - une section `API` de type apiStruct
-// - une section `Proxy` de type proxyStruct
-
 type config struct {
 	*sync.Mutex
 	Main     mainStruct
@@ -37,6 +33,8 @@ type config struct {
 	Release  releaseStruct
 	Notifier notifierStruct
 	Scripts  []string
+	API      apiStruct `yaml:"api"`
+	Proxy    proxyStruct
 }
 
 type mainStruct struct {
@@ -82,9 +80,13 @@ type releaseStruct struct {
 	Run       execStruct
 }
 
-// Etape 2: Créer 2 type struct
-// apiStruct qui contient, un `Username` et un `Password` tous les 2 `string`
-// proxyStruct qui contient un slice de string pour un champs `Origin`
+type apiStruct struct {
+	Username, Password string
+}
+
+type proxyStruct struct {
+	Origins []string
+}
 
 func getConfig(lang string, configFile string) (*config, error) {
 	conf, err := defaultConf(lang)
