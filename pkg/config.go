@@ -33,16 +33,14 @@ type config struct {
 	Release  releaseStruct
 	Notifier notifierStruct
 	Scripts  []string
-	API      apiStruct `yaml:"api"`
-	Proxy    proxyStruct
 }
 
 type mainStruct struct {
 	Repository string
 	Head       string
 	Color      bool
-	ApiPort    int `yaml:"api_port"`
-	ProxyPort  int `yaml:"proxy_port"`
+	API        apiStruct   `yaml:"api"`
+	Proxy      proxyStruct `yaml:"proxy"`
 }
 
 type triggerStruct struct {
@@ -81,11 +79,13 @@ type releaseStruct struct {
 }
 
 type apiStruct struct {
-	Username, Password string
+	Username, Password *string
+	Port               int `yaml:"port"`
 }
 
 type proxyStruct struct {
-	Origins []string
+	Origins []string `yaml:"origins"`
+	Port    int      `yaml:"port"`
 }
 
 func getConfig(lang string, configFile string) (*config, error) {
@@ -125,17 +125,19 @@ type args struct {
 	configFile string
 	repository string
 	head       string
-	colorize   bool
+	nocolor    bool
 	version    bool
+	lang       string
 }
 
 func (p *argsParser) parse() args {
 	a := args{}
 	flag.StringVar(&a.configFile, "config", defaultConfigFile, "configuration file")
-	flag.StringVar(&a.repository, "repository", "myrepo", "GIT repository target name")
-	flag.StringVar(&a.head, "head", "main", "GIT repository target name")
-	flag.BoolVar(&a.colorize, "color", false, "colorize logs")
-	flag.BoolVar(&a.version, "version", false, "display the version")
+	flag.StringVar(&a.repository, "repository", "myrepo", "GIT repository URI")
+	flag.StringVar(&a.head, "head", "main", "GIT branch to build from")
+	flag.BoolVar(&a.nocolor, "nocolor", false, "disable log color")
+	flag.BoolVar(&a.version, "version", false, "crzy version")
+	flag.StringVar(&a.lang, "template", "go", "template for language")
 	flag.Parse()
 	return a
 }
@@ -151,8 +153,8 @@ func getConf(a args) (*config, error) {
 	if a.head != "main" || conf.Main.Head == "" {
 		conf.Main.Head = a.head
 	}
-	if a.colorize {
-		conf.Main.Color = a.colorize
+	if a.nocolor {
+		conf.Main.Color = false
 	}
 	return conf, nil
 }

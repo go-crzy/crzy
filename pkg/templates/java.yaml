@@ -2,8 +2,10 @@ main:
   head: main
   color: true
   repository: color.git
-  api_port: 8080
-  proxy_port: 8081
+  api:
+    port: 8080
+  proxy:
+    port: 8081
 
 deploy:
   artifact:

@@ -14,9 +14,9 @@ import (
 
 func Test_argsParser(t *testing.T) {
 	p := &argsParser{}
-	os.Args = []string{"crzy", "-repository", "color.git", "-color"}
+	os.Args = []string{"crzy", "-repository", "color.git", "-nocolor"}
 	a := p.parse()
-	if a.colorize != true {
+	if a.nocolor != true {
 		t.Error("args not parsed as expected")
 	}
 }

@@ -12,7 +12,7 @@ type mockParser struct {
 	configFile string
 	repository string
 	head       string
-	colorize   bool
+	nocolor    bool
 	version    bool
 }
 
@@ -21,7 +21,7 @@ func (p *mockParser) parse() args {
 		configFile: p.configFile,
 		repository: p.repository,
 		head:       p.head,
-		colorize:   p.colorize,
+		nocolor:    p.nocolor,
 		version:    p.version,
 	}
 }
@@ -32,8 +32,12 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 			Head:       "main",
 			Color:      true,
 			Repository: "myrepo",
-			ApiPort:    8080,
-			ProxyPort:  8081,
+			API: apiStruct{
+				Port: 8080,
+			},
+			Proxy: proxyStruct{
+				Port: 8081,
+			},
 		},
 		Deploy: deployStruct{
 			Artifact: artifactStruct{
@@ -143,7 +147,7 @@ func Test_getConfig_with_file_and_succeed(t *testing.T) {
 func Test_getConf_with_file_and_succeed(t *testing.T) {
 	args := args{
 		configFile: defaultConfigFile,
-		colorize:   true,
+		nocolor:    false,
 	}
 	_, err := getConf(args)
 	if err != nil {
