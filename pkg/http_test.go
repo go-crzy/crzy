@@ -64,6 +64,8 @@ func Test_loggingMiddleware(t *testing.T) {
 	}
 }
 
+// Etape 4: Creer des tests pour tester le middleware d'autentification
+
 func Test_run_and_cancel(t *testing.T) {
 	errc := make(chan error)
 	l, err := net.Listen("tcp", ":8099")

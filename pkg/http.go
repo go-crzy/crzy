@@ -76,3 +76,9 @@ func loggingMiddleware(log logr.Logger, next http.Handler) http.Handler {
 		log.Info(fmt.Sprintf("[%s] %q %v", r.Method, r.URL.String(), t2.Sub(t1)))
 	})
 }
+
+// Step 3: Creer un middleware qui va:
+// - vérifier le contenu du Header HTTP "authorization"
+// - s'il ne contient pas "basic" et une chaine de caractère (tester en case-insensitive) renvoyer http-401
+// - décoder la chaine après basic en base64, celle-ci doit être de la forme "mot1:mot2", sinon renvoyer http-401
+// - vérifier que mot1==username et mot2==password sinon, renvoyer http-401
