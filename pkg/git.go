@@ -146,8 +146,6 @@ func (r *defaultContainer) newGitServer(store store, state *stateManager, action
 	return server, nil
 }
 
-// Etape 5: ajouter le middleware d'authentification sur le handler http.
-
 func (g *gitServer) captureAndTrigger(next http.Handler) http.Handler {
 	mux := newAPI(g.state)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
