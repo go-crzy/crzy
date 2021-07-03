@@ -3,9 +3,10 @@ package pkg
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 
-	log "github.com/go-crzy/crzy/logr"
+	l "github.com/go-crzy/crzy/logr"
 	"github.com/go-logr/logr"
 	"golang.org/x/sync/errgroup"
 )
@@ -19,21 +20,32 @@ var (
 // should be created with the NewCrzy function.
 type DefaultRunner struct {
 	log       logr.Logger
+	args      Args
 	container container
 }
 
 // NewCrzy creates the DefaultRunner with the various configuration options.
-func NewCrzy() *DefaultRunner {
-	log := log.NewLogger("", log.OptionColor)
+func NewCrzy(args Args) (*DefaultRunner, error) {
+	if args.Version {
+		fmt.Fprintf(os.Stdout, "crzy version %s(%s)\n", version, commit)
+		return nil, ErrVersionRequested
+	}
+	var log logr.Logger
+	switch args.NoColor {
+	case false:
+		log = l.NewLogger("", l.OptionColor)
+	default:
+		log = l.NewLogger("")
+	}
 	container := &defaultContainer{
-		log:    log,
-		out:    os.Stdout,
-		parser: &argsParser{},
+		log: log,
+		out: os.Stdout,
 	}
 	return &DefaultRunner{
 		log:       log,
+		args:      args,
 		container: container,
-	}
+	}, nil
 }
 
 // Run starts the DefaultRunner and runs Crzy
@@ -42,7 +54,7 @@ func (c *DefaultRunner) Run(ctx context.Context) error {
 		return ErrWronglyInitialized
 	}
 	log := c.log.WithName("main")
-	err := c.container.load()
+	err := c.container.getConf(c.args)
 	if err != nil {
 		return err
 	}

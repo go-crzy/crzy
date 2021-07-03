@@ -3,7 +3,6 @@ package pkg
 import (
 	"embed"
 	"errors"
-	"flag"
 	"io/ioutil"
 	"runtime"
 	"sync"
@@ -15,9 +14,9 @@ import (
 var langTemplate embed.FS
 
 const (
-	defaultConfigFile = "crzy.yaml"
-	defaultLanguage   = "golang"
-	golangLanguage    = "golang"
+	DefaultConfigFile = "crzy.yaml"
+	defaultLanguage   = "go"
+	golangLanguage    = "go"
 )
 
 var (
@@ -33,16 +32,14 @@ type config struct {
 	Release  releaseStruct
 	Notifier notifierStruct
 	Scripts  []string
-	API      apiStruct `yaml:"api"`
-	Proxy    proxyStruct
 }
 
 type mainStruct struct {
 	Repository string
 	Head       string
 	Color      bool
-	ApiPort    int `yaml:"api_port"`
-	ProxyPort  int `yaml:"proxy_port"`
+	API        apiStruct   `yaml:"api"`
+	Proxy      proxyStruct `yaml:"proxy"`
 }
 
 type triggerStruct struct {
@@ -81,11 +78,13 @@ type releaseStruct struct {
 }
 
 type apiStruct struct {
-	Username, Password string
+	Username, Password *string
+	Port               int `yaml:"port"`
 }
 
 type proxyStruct struct {
-	Origins []string
+	Origins []string `yaml:"origins"`
+	Port    int      `yaml:"port"`
 }
 
 func getConfig(lang string, configFile string) (*config, error) {
@@ -94,7 +93,7 @@ func getConfig(lang string, configFile string) (*config, error) {
 		return nil, errUnsupportedLang
 	}
 	yamlFile, err := ioutil.ReadFile(configFile)
-	if err != nil && configFile != defaultConfigFile {
+	if err != nil && configFile != DefaultConfigFile {
 		return nil, errLoadingConfigFile
 	}
 	if err == nil {
@@ -115,44 +114,29 @@ func defaultConf(lang string) (conf *config, err error) {
 	}
 }
 
-type parser interface {
-	parse() args
+type Args struct {
+	ConfigFile string
+	Repository string
+	Head       string
+	NoColor    bool
+	Version    bool
+	Lang       string
 }
 
-type argsParser struct{}
-
-type args struct {
-	configFile string
-	repository string
-	head       string
-	colorize   bool
-	version    bool
-}
-
-func (p *argsParser) parse() args {
-	a := args{}
-	flag.StringVar(&a.configFile, "config", defaultConfigFile, "configuration file")
-	flag.StringVar(&a.repository, "repository", "myrepo", "GIT repository target name")
-	flag.StringVar(&a.head, "head", "main", "GIT repository target name")
-	flag.BoolVar(&a.colorize, "color", false, "colorize logs")
-	flag.BoolVar(&a.version, "version", false, "display the version")
-	flag.Parse()
-	return a
-}
-
-func getConf(a args) (*config, error) {
-	conf, err := getConfig(defaultLanguage, a.configFile)
+func (c *defaultContainer) getConf(a Args) error {
+	conf, err := getConfig(defaultLanguage, a.ConfigFile)
+	c.config = conf
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if a.repository != "myrepo" || conf.Main.Repository == "" {
-		conf.Main.Repository = a.repository
+	if a.Repository != "myrepo" || conf.Main.Repository == "" {
+		conf.Main.Repository = a.Repository
 	}
-	if a.head != "main" || conf.Main.Head == "" {
-		conf.Main.Head = a.head
+	if a.Head != "main" || conf.Main.Head == "" {
+		conf.Main.Head = a.Head
 	}
-	if a.colorize {
-		conf.Main.Color = a.colorize
+	if a.NoColor {
+		conf.Main.Color = false
 	}
-	return conf, nil
+	return nil
 }

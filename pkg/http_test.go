@@ -136,12 +136,16 @@ func Test_AuthdHandler_forbidden(t *testing.T) {
 	request := httptest.NewRequest("Get", "/", nil)
 	request.Header.Add("authorization", "Basic aaa")
 
-	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {rw.Write([]byte("hello"))})
-	conf := &config{API: apiStruct{Username: "emilie", Password: "emilie"}}
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Write([]byte("hello"))
+	})
+	username := "username"
+	password := "password"
+	conf := &config{Main: mainStruct{
+		API: apiStruct{Username: &username, Password: &password},
+	}}
 	next := conf.authMiddleware(handler)
-
 	next.ServeHTTP(recorder, request)
-
 	result := recorder.Result()
 	if result.StatusCode != http.StatusUnauthorized {
 		t.Errorf(
@@ -154,14 +158,18 @@ func Test_AuthdHandler_forbidden(t *testing.T) {
 func Test_AuthdHandler_authorized(t *testing.T) {
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest("Get", "/", nil)
-	request.Header.Add("authorization", "Basic ZW1pbGllOmVtaWxpZQ==")
+	request.Header.Add("authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 
-	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {rw.Write([]byte("hello"))})
-	conf := &config{API: apiStruct{Username: "emilie", Password: "emilie"}}
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Write([]byte("hello"))
+	})
+	username := "username"
+	password := "password"
+	conf := &config{Main: mainStruct{
+		API: apiStruct{Username: &username, Password: &password},
+	}}
 	next := conf.authMiddleware(handler)
-
 	next.ServeHTTP(recorder, request)
-
 	result := recorder.Result()
 	if result.StatusCode != http.StatusOK {
 		t.Errorf(

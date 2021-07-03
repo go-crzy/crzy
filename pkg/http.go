@@ -81,30 +81,31 @@ func loggingMiddleware(log logr.Logger, next http.Handler) http.Handler {
 
 type expl struct {
 	next               http.Handler
-	username, password string
+	username, password *string
 }
 
-func (ex *expl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if ex.password == "" || ex.username == "" {
-		ex.next.ServeHTTP(w, r)
-		return
-	}
-	authorization := r.Header.Get("authorization")
+var errWrongCredentials = errors.New("wrongcredentials")
+
+func checkCredentials(authorization, username, password string) error {
 	keys := strings.Split(authorization, " ")
-	if len(keys) != 2 || keys[0] != "Basic" {
-		w.Header().Add("WWW-Authenticate", "Basic realm=\"require auth\"")
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+	if len(keys) != 2 || strings.ToLower(keys[0]) != "basic" {
+		return errWrongCredentials
 	}
 	body, err := base64.StdEncoding.DecodeString(keys[1])
 	if err != nil {
-		w.Header().Add("WWW-Authenticate", "Basic realm=\"require auth\"")
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+		return errWrongCredentials
 	}
 	keys = strings.Split(string(body), ":")
-	if len(keys) != 2 || keys[0] != ex.username || keys[1] != ex.password {
-		w.Header().Add("WWW-Authenticate", "Basic realm=\"require auth\"")
+	if len(keys) < 2 || keys[0] != username || strings.Join(keys[1:], ":") != password {
+		return errWrongCredentials
+	}
+	return nil
+}
+
+func (ex *expl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if ex.password != nil && ex.username != nil &&
+		checkCredentials(r.Header.Get("authorization"), *ex.username, *ex.password) != nil {
+		w.Header().Add("WWW-Authenticate", "Basic realm=\"auth required\"")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -114,7 +115,7 @@ func (ex *expl) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (c *config) authMiddleware(h http.Handler) http.Handler {
 	return &expl{
 		next:     h,
-		username: c.API.Username,
-		password: c.API.Password,
+		username: c.Main.API.Username,
+		password: c.Main.API.Password,
 	}
 }
