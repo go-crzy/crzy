@@ -3,7 +3,7 @@ package pkg
 import (
 	"context"
 	"errors"
-	"io"
+	"net"
 	"testing"
 
 	log "github.com/go-crzy/crzy/logr"
@@ -13,7 +13,7 @@ type mockContainer struct {
 	step string
 }
 
-func (m *mockContainer) load() error {
+func (m *mockContainer) getConf(args Args) error {
 	if m.step == "load" {
 		return errors.New("load")
 	}
@@ -57,7 +57,9 @@ func (m *mockContainer) newHTTPListener(addr string) (*HTTPListener, error) {
 	if m.step == "proxy" && addr == listenerProxyAddr {
 		return nil, errors.New("proxy")
 	}
-	return nil, nil
+	return &HTTPListener{
+		lsnr: &net.TCPListener{},
+	}, nil
 }
 
 func (m *mockContainer) newSignalHandler() *signalHandler {
@@ -74,24 +76,9 @@ func (m *mockContainer) createAndStartWorkflows(ctx context.Context, state *stat
 	return nil
 }
 
-func Test_load(t *testing.T) {
-	log := &log.MockLogger{}
-	c := &defaultContainer{
-		log: log,
-		out: io.Discard,
-		parser: &mockParser{
-			version: true,
-		},
-	}
-	err := c.load()
-	if err != ErrVersionRequested {
-		t.Error("should get ErrWronglyInitialized, current:", err)
-	}
-}
-
 func Test_container_mock(t *testing.T) {
 	c := &mockContainer{}
-	err := c.load()
+	err := c.getConf(Args{})
 	if err != nil {
 		t.Error("should succeed, got:", err)
 	}

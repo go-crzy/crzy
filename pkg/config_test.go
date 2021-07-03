@@ -8,24 +8,6 @@ import (
 	"testing"
 )
 
-type mockParser struct {
-	configFile string
-	repository string
-	head       string
-	nocolor    bool
-	version    bool
-}
-
-func (p *mockParser) parse() args {
-	return args{
-		configFile: p.configFile,
-		repository: p.repository,
-		head:       p.head,
-		nocolor:    p.nocolor,
-		version:    p.version,
-	}
-}
-
 func Test_defaultConf_and_succeed(t *testing.T) {
 	d := &config{
 		Main: mainStruct{
@@ -78,9 +60,9 @@ func Test_defaultConf_and_succeed(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		d.Deploy.Artifact.Extension = ".exe"
 	}
-	c, err := defaultConf("golang")
+	c, err := defaultConf("go")
 	if err != nil {
-		t.Error("expect defaultConf with golang to succeed")
+		t.Error("expect defaultConf with go to succeed")
 	}
 	if !reflect.DeepEqual(c, d) {
 		text, _ := json.Marshal(&c)
@@ -103,15 +85,16 @@ func Test_getConfig_and_fail_java(t *testing.T) {
 }
 
 func Test_getConfig_and_fail_golang(t *testing.T) {
-	_, err := getConfig("golang", "fail.yaml")
+	_, err := getConfig("go", "fail.yaml")
 	if err != errLoadingConfigFile {
 		t.Error("should fail reading file, instead:", err)
 	}
 }
 
 func Test_getConf_and_fail_golang(t *testing.T) {
-	_, err := getConf(args{
-		configFile: "fail.yaml",
+	c := &defaultContainer{}
+	err := c.getConf(Args{
+		ConfigFile: "fail.yaml",
 	})
 	if err != errLoadingConfigFile {
 		t.Error("should fail reading file, instead:", err)
@@ -119,7 +102,7 @@ func Test_getConf_and_fail_golang(t *testing.T) {
 }
 
 func Test_getConfig_without_file_and_succeed(t *testing.T) {
-	_, err := getConfig("golang", defaultConfigFile)
+	_, err := getConfig("go", DefaultConfigFile)
 	if err != nil {
 		t.Error("should not fail if the file is the default file")
 	}
@@ -138,18 +121,19 @@ func Test_getConfig_with_file_and_succeed(t *testing.T) {
 	defer os.Remove(f.Name())
 	defer f.Close()
 	f.ReadFrom(input)
-	_, err = getConfig("golang", f.Name())
+	_, err = getConfig("go", f.Name())
 	if err != nil {
 		t.Error("should be able to read file")
 	}
 }
 
 func Test_getConf_with_file_and_succeed(t *testing.T) {
-	args := args{
-		configFile: defaultConfigFile,
-		nocolor:    false,
+	args := Args{
+		ConfigFile: DefaultConfigFile,
+		NoColor:    false,
 	}
-	_, err := getConf(args)
+	c := &defaultContainer{}
+	err := c.getConf(args)
 	if err != nil {
 		t.Error("should be able to read file")
 	}

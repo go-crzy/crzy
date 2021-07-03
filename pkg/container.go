@@ -2,14 +2,13 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 	"io"
 
 	"github.com/go-logr/logr"
 )
 
 type container interface {
-	load() error
+	getConf(args Args) error
 	createStore() (*store, error)
 	newStateManager() *stateManager
 	newDefaultGitCommand(store store) (gitCommand, error)
@@ -23,21 +22,9 @@ type defaultContainer struct {
 	log    logr.Logger
 	out    io.Writer
 	config *config
-	parser parser
 }
 
 var (
 	version = "dev"
 	commit  = "unknown"
 )
-
-func (c *defaultContainer) load() error {
-	args := c.parser.parse()
-	if args.version {
-		fmt.Fprintf(c.out, "crzy version %s(%s)\n", version, commit)
-		return ErrVersionRequested
-	}
-	conf, err := getConf(args)
-	c.config = conf
-	return err
-}

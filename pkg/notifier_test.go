@@ -67,7 +67,7 @@ channel: ""
 }
 
 func Test_notifier_config(t *testing.T) {
-	c, err := defaultConf("golang")
+	c, err := defaultConf("go")
 	if err != nil {
 		t.Error("expect defaultConf with golang to succeed")
 	}
