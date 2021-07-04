@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/gregoryguillou/go-git-http-xfer/githttpxfer"
+	"github.com/go-crzy/go-git-http-xfer/githttpxfer"
 )
 
 type gitCommand interface {

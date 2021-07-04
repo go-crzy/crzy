@@ -125,10 +125,10 @@ type Args struct {
 
 func (c *defaultContainer) getConf(a Args) error {
 	conf, err := getConfig(defaultLanguage, a.ConfigFile)
-	c.config = conf
 	if err != nil {
 		return err
 	}
+	c.config = conf
 	if a.Repository != "myrepo" || conf.Main.Repository == "" {
 		conf.Main.Repository = a.Repository
 	}
