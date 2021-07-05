@@ -125,7 +125,7 @@ func (c *config) corsMiddleware(h http.Handler) http.Handler {
 	cm := cors.New(cors.Options{
 				AllowedOrigins:   c.Main.Proxy.Origins,
 		 		AllowCredentials: true,
-		 		Debug:            true,
+		 		Debug:            false,
  	})
 	return cm.Handler(h)
 }
