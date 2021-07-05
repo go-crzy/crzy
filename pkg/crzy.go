@@ -88,7 +88,7 @@ func (c *DefaultRunner) Run(ctx context.Context) error {
 	}
 	upstream := newUpstream(state.state)
 	f := upstream.setDefault
-	proxy := newReverseProxy(upstream)
+	proxy := c.container.newReverseProxy(upstream)
 	listener2, err := c.container.newHTTPListener(listenerProxyAddr)
 	if err != nil {
 		log.Error(err, "could not start proxy listener")

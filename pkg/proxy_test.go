@@ -6,6 +6,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	log "github.com/go-crzy/crzy/logr"
 )
 
 type mockUpstream struct{}
@@ -24,7 +26,11 @@ func (u *mockUpstream) listVersions() []byte {
 }
 
 func Test_newReverseProxy_with_404(t *testing.T) {
-	h := newReverseProxy(&mockUpstream{})
+	r := &defaultContainer{
+		log:    &log.MockLogger{},
+		config: &config{},
+	}
+	h := r.newReverseProxy(&mockUpstream{})
 	server := httptest.NewServer(h)
 	client := server.Client()
 
