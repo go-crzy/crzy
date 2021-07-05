@@ -7,8 +7,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/go-crzy/go-git-http-xfer/githttpxfer"
+	"github.com/go-logr/logr"
 )
 
 type gitCommand interface {
@@ -142,7 +142,6 @@ func (r *defaultContainer) newGitServer(store store, state *stateManager, action
 	}
 	handler := loggingMiddleware(r.log.WithName("git"), server.captureAndTrigger(ghx))
 	handler = r.config.authMiddleware(handler)
-	handler = r.config.corsMiddleware(handler)
 	server.ghx = &handler
 	return server, nil
 }

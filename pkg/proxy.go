@@ -9,11 +9,11 @@ import (
 )
 
 // newReverseProxy creates a reverse proxy for the existing service
-func newReverseProxy(u upstream) http.HandlerFunc {
+func (r *defaultContainer) newReverseProxy(u upstream) http.Handler {
 	transport := &http.Transport{
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
-	return func(w http.ResponseWriter, r *http.Request) {
+	return r.config.corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v, err := u.getDefault()
 		if err == errServiceNotFound {
 			http.Error(w, `{"message": "NotFound"}`, http.StatusNotFound)
@@ -26,7 +26,7 @@ func newReverseProxy(u upstream) http.HandlerFunc {
 			},
 			Transport: transport,
 		}).ServeHTTP(w, r)
-	}
+	}))
 }
 
 type defaultUpstream struct {

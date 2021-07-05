@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
 	"testing"
 
 	log "github.com/go-crzy/crzy/logr"
@@ -43,6 +44,9 @@ func (m *mockContainer) newDefaultGitCommand(store store) (gitCommand, error) {
 	return &defaultGitCommand{}, nil
 }
 
+func (m *mockContainer) newReverseProxy(u upstream) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+}
 func (m *mockContainer) newGitServer(store store, state *stateManager, action chan<- event, release chan<- event) (*gitServer, error) {
 	if m.step == "gitserver" {
 		return nil, errors.New("gitserver")
