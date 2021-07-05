@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"github.com/rs/cors"
 )
 
 type HTTPListener struct {
@@ -118,4 +119,13 @@ func (c *config) authMiddleware(h http.Handler) http.Handler {
 		username: c.Main.API.Username,
 		password: c.Main.API.Password,
 	}
+}
+
+func (c *config) corsMiddleware(h http.Handler) http.Handler {
+	cm := cors.New(cors.Options{
+				AllowedOrigins:   c.Main.Proxy.Origins,
+		 		AllowCredentials: true,
+		 		Debug:            true,
+ 	})
+	return cm.Handler(h)
 }

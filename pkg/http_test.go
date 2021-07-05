@@ -178,3 +178,16 @@ func Test_AuthdHandler_authorized(t *testing.T) {
 		)
 	}
 }
+
+// Etape 1: Créer un test pour le middleware des CORS, celui-ci doit:
+// - créer une config avec config avec cette propriété dans la config
+//    { Main:{ Proxy: Origins: []string{"http://foo.example"}}}
+// - construire une request avec les Headers suivants
+// Origin: http://foo.example
+// Access-Control-Request-Method: POST
+// Access-Control-Request-Headers: X-PINGOTHER, Content-Type
+// - Appeler un handler avec emcapsulé dans le Middleware CORS
+// - Vérifier que les Headers de la réponse contiennent:
+// Access-Control-Allow-Origin: http://foo.example
+// Access-Control-Allow-Methods: *
+// Access-Control-Allow-Headers: *
