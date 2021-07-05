@@ -178,3 +178,30 @@ func Test_AuthdHandler_authorized(t *testing.T) {
 		)
 	}
 }
+
+func Test_corsMiddleware(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodPost, "/", nil)
+	request.Header.Add("Origin", "http://foo.example")
+	request.Header.Add("Access-Control-Request-Method", "POST")
+	request.Header.Add("Access-Control-Request-Headers", "X-PINGOTHER, Content-Type")
+
+	handler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		rw.Write([]byte("hello"))
+	})
+	conf := &config{Main: mainStruct{
+		Proxy: proxyStruct{Origins: []string{"http://foo.example"}},
+	}}
+	next := conf.corsMiddleware(handler)
+	next.ServeHTTP(recorder, request)
+	result := recorder.Result()
+	if result.StatusCode != http.StatusOK {
+		t.Errorf(
+			"Status Code should be 200, current: %d",
+			result.StatusCode,
+		)
+	}
+	if result.Header.Get("Access-Control-Allow-Origin") != "http://foo.example" {
+		t.Error("Access-Control-Allow-Origin should match the origin")
+	}
+}
