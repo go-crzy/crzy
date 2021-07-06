@@ -103,6 +103,7 @@ var errConnectionFailed = errors.New("connectionfailed")
 func (r *releaseWorkflow) checkConnect(host string, port string, timeout time.Duration) error {
 	log := r.log.WithName("release")
 	tick := time.NewTicker(time.Second)
+	defer tick.Stop()
 	end := time.NewTimer(timeout)
 	for {
 		select {
