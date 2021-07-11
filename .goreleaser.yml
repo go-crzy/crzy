@@ -2,6 +2,7 @@ before:
   hooks:
   - go mod tidy
   - go generate ./...
+  - echo {{.Version}} {{.ShortCommit}}
 builds:
 - env:
   - CGO_ENABLED=0
@@ -17,9 +18,6 @@ builds:
   ignore:
   - goos: windows
     goarch: arm64
-after:
-  hooks:
-  - echo {{.Version}} {{.ShortCommit}}
 archives:
 - replacements:
     386: i386
