@@ -13,7 +13,7 @@ RUN go mod download && CGO_ENABLED=0 go build \
   -o crzy .
 
 FROM golang:1.16-alpine
-RUN apk add --no-cache wget git
+RUN apk add --no-cache wget git gcc musl-dev
 WORKDIR /app
 COPY --from=builder /build/crzy /bin/crzy
 ENV REPOSITORY myrepo

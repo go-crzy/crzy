@@ -59,6 +59,7 @@ func (c *DefaultRunner) Run(ctx context.Context) error {
 		return err
 	}
 	heading(log)
+	log.Info(fmt.Sprintf("crzy version %s(%s)", version, commit))
 	group, ctx := errgroup.WithContext(ctx)
 	store, err := c.container.createStore()
 	if err != nil {
