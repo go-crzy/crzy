@@ -13,10 +13,13 @@ builds:
   - amd64
   - arm64
   ldflags:
-  - -s -w -X pkg.build={{.Version}} -X pkg.commit={{.ShortCommit}}
+  - -s -w -X github.com/go-crzy/crzy/pkg.version={{.Version}} -X github.com/go-crzy/crzy/pkg.commit={{.ShortCommit}}
   ignore:
   - goos: windows
     goarch: arm64
+after:
+  hooks:
+  - echo {{.Version}} {{.ShortCommit}}
 archives:
 - replacements:
     386: i386
@@ -26,8 +29,6 @@ archives:
       format: zip
 checksum:
   name_template: 'checksums.txt'
-snapshot:
-  name_template: "{{ .Tag }}-next"
 changelog:
   sort: asc
 brews:
