@@ -1,2 +1,4 @@
+#!/bin/bash
+
 COMMIT=$(echo $SOURCE_COMMIT | cut -c1-16)
 docker build . --build-arg DOCKER_TAG=${DOCKER_TAG} --build-arg COMMIT=${COMMIT} -t ${IMAGE_NAME}
